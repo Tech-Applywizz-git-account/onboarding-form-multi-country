@@ -1,0 +1,335 @@
+/* @tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;            
+    --background-secondary: 0 0% 98%;   
+    --foreground: 0 0% 7%;              
+
+    --card: 0 0% 100%;
+    --card-glass: 0 0% 100%;
+    --card-foreground: 0 0% 7%;
+    --card-border: 50 100% 45%;         
+
+    --glass-bg: 0 0% 100%;
+    --glass-border: 0 0% 92%;
+    --glass-shadow: 0 0% 0%;
+
+    --primary: 50 100% 50%;             
+    --primary-glow: 50 100% 60%;        
+    --primary-foreground: 0 0% 7%;      
+
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 10%;
+
+    --accent: 190 100% 40%;
+    --accent-glow: 190 100% 50%;
+    --accent-foreground: 0 0% 7%;
+
+    --success: 142 76% 36%;
+    --success-glow: 142 76% 46%;
+    --warning: 38 92% 50%;
+    --destructive: 0 84% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 40%;
+
+
+    --input: 0 0% 100%;
+    --input-border: 50 100% 45%;        
+    --ring: 50 100% 50%;                
+    --border: 50 100% 45%;              
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 7%;
+
+    --radius: 0.75rem;
+
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
+    --gradient-accent: linear-gradient(135deg, hsl(var(--accent)), hsl(var(--accent-glow)));
+    --gradient-bg: linear-gradient(180deg, hsl(var(--background)), hsl(var(--background-secondary)));
+    --gradient-glass: linear-gradient(135deg, hsl(0 0% 100% / 0.96), hsl(0 0% 100% / 0.88));
+
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+    --shadow-glass: 0 8px 24px hsl(0 0% 0% / 0.06);
+    --shadow-primary: 0 0 20px hsl(var(--primary) / 0.25);
+    --shadow-glow: 0 0 28px hsl(var(--primary-glow) / 0.28);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground min-h-screen;
+    background-image: var(--gradient-bg); 
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-card border border-card-border rounded-xl shadow-[0_8px_24px_rgba(0,0,0,0.06)];
+  }
+
+  .btn-primary {
+    @apply bg-primary text-primary-foreground
+           border border-border
+           transition-all duration-300
+           hover:bg-primary-glow
+           active:scale-95;
+
+           box-shadow: 0 6px 14px hsl(var(--primary) / 0.25);
+  }
+
+  .btn-secondary {
+    @apply bg-background border border-border text-foreground
+           hover:bg-background-secondary transition-all duration-300;
+  }
+
+
+  .btn-success {
+    @apply bg-gradient-to-r from-success to-success-glow text-white
+           shadow-lg hover:shadow-xl transition-all duration-300;
+  }
+
+  .input-field {
+    @apply bg-input border border-input-border rounded-lg
+           text-foreground placeholder:text-muted-foreground
+           focus:border-primary focus:ring-2 focus:ring-[hsl(var(--ring)/0.3)]
+           transition-all duration-300;
+  }
+
+  .otp-input {
+    @apply w-12 h-12 text-center text-lg font-semibold rounded-lg
+           bg-input border border-input-border
+           focus:border-primary focus:ring-2 focus:ring-[hsl(var(--ring)/0.3)]
+           transition-all duration-300;
+  }
+}
+
+@layer utilities {
+  @keyframes mail-send {
+    0% { transform: translateX(0) translateY(0) rotate(0deg); opacity: 1; }
+    50% { transform: translateX(200px) translateY(-100px) rotate(15deg); opacity: 0.8; }
+    100% { transform: translateX(400px) translateY(-200px) rotate(30deg); opacity: 0; }
+  }
+
+  @keyframes confetti-burst {
+    0% { transform: scale(0) rotate(0deg); opacity: 1; }
+    50% { transform: scale(1.2) rotate(180deg); opacity: 0.8; }
+    100% { transform: scale(1) rotate(360deg); opacity: 0; }
+  }
+
+  @keyframes data-send {
+    0% { transform: translateY(0) scale(1); opacity: 1; }
+    50% { transform: translateY(-50px) scale(0.8); opacity: 0.6; }
+    100% { transform: translateY(-100px) scale(0.5); opacity: 0; }
+  }
+
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+    20%, 40%, 60%, 80% { transform: translateX(4px); }
+  }
+
+  @keyframes glow {
+    0%, 100% { box-shadow: 0 0 5px hsl(var(--primary)); }
+    50% { box-shadow: 0 0 20px hsl(var(--primary)), 0 0 30px hsl(var(--primary)); }
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+  }
+
+  .animate-mail-send { animation: mail-send 2s ease-out forwards; }
+  .animate-confetti { animation: confetti-burst 1s ease-out forwards; }
+  .animate-data-send { animation: data-send 1.5s ease-out forwards; }
+  .animate-shake { animation: shake 0.5s ease-in-out; }
+  .animate-glow { animation: glow 2s ease-in-out infinite; }
+  .animate-float { animation: float 3s ease-in-out infinite; }
+} */
+
+
+
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* APPLYWIZZ Design System - Light theme */
+
+@layer base {
+  :root {
+    /* Base */
+    --background: 0 0% 100%;            /* white */
+    --background-secondary: 0 0% 98%;   /* near-white for subtle sections */
+    --foreground: 0 0% 7%;              /* near-black text */
+
+    /* Cards */
+    --card: 0 0% 100%;
+    --card-glass: 0 0% 100%;
+    --card-foreground: 0 0% 7%;
+    --card-border: 214 89% 52%;         /* Facebook blue border */
+
+    /* (Legacy glass tokens kept to avoid breaking builds — unused in light theme) */
+    --glass-bg: 0 0% 100%;
+    --glass-border: 0 0% 92%;
+    --glass-shadow: 0 0% 0%;
+
+    /* Primary = Blue (Facebook) */
+    --primary: 214 89% 52%;             /* main blue */
+    --primary-glow: 214 89% 58%;        /* lighter blue for hover */
+    --primary-foreground: 0 0% 100%;    /* white text on blue */
+
+    /* Secondary (neutral) */
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 10%;
+
+    /* Accent (optional cyan retained if used anywhere) */
+    --accent: 190 100% 40%;
+    --accent-glow: 190 100% 50%;
+    --accent-foreground: 0 0% 7%;
+
+    /* Status Colors (unchanged) */
+    --success: 142 76% 36%;
+    --success-glow: 142 76% 46%;
+    --warning: 38 92% 50%;
+    --destructive: 0 84% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Muted */
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 40%;
+
+    /* Form Elements */
+    --input: 0 0% 100%;
+    --input-border: 214 89% 52%;        /* blue border */
+    --ring: 214 89% 52%;                /* blue ring */
+    --border: 214 89% 52%;              /* blue borders globally */
+
+    /* Popover */
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 7%;
+
+    --radius: 0.75rem;
+
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
+    --gradient-accent: linear-gradient(135deg, hsl(var(--accent)), hsl(var(--accent-glow)));
+    --gradient-bg: linear-gradient(180deg, hsl(var(--background)), hsl(var(--background-secondary)));
+    --gradient-glass: linear-gradient(135deg, hsl(0 0% 100% / 0.96), hsl(0 0% 100% / 0.88));
+
+    /* Animations (unchanged) */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+    /* Shadows tuned for light */
+    --shadow-glass: 0 8px 24px hsl(0 0% 0% / 0.06);
+    --shadow-primary: 0 0 20px hsl(var(--primary) / 0.25);
+    --shadow-glow: 0 0 28px hsl(var(--primary-glow) / 0.28);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground min-h-screen;
+    background-image: var(--gradient-bg);
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-card border border-card-border rounded-xl shadow-[0_8px_24px_rgba(0,0,0,0.06)];
+  }
+
+  /* Primary Button — solid blue */
+  .btn-primary {
+    @apply bg-primary text-primary-foreground
+           border border-border
+           transition-all duration-300
+           hover:bg-primary-glow
+           active:scale-95;
+    box-shadow: 0 6px 14px hsl(var(--primary) / 0.25);
+  }
+
+  .btn-secondary {
+    @apply bg-background border border-border text-foreground
+           hover:bg-background-secondary transition-all duration-300;
+  }
+
+  .btn-success {
+    @apply bg-gradient-to-r from-success to-success-glow text-white
+           shadow-lg hover:shadow-xl transition-all duration-300;
+  }
+
+  /* Input Field — white with blue border + focus ring */
+  .input-field {
+    @apply bg-input border border-input-border rounded-lg
+           text-foreground placeholder:text-muted-foreground
+           focus:border-primary focus:ring-2 focus:ring-[hsl(var(--ring)/0.3)]
+           transition-all duration-300;
+  }
+
+  .otp-input {
+    @apply w-12 h-12 text-center text-lg font-semibold rounded-lg
+           bg-input border border-input-border
+           focus:border-primary focus:ring-2 focus:ring-[hsl(var(--ring)/0.3)]
+           transition-all duration-300;
+  }
+}
+
+@layer utilities {
+  @keyframes mail-send {
+    0% { transform: translateX(0) translateY(0) rotate(0deg); opacity: 1; }
+    50% { transform: translateX(200px) translateY(-100px) rotate(15deg); opacity: 0.8; }
+    100% { transform: translateX(400px) translateY(-200px) rotate(30deg); opacity: 0; }
+  }
+
+  @keyframes confetti-burst {
+    0% { transform: scale(0) rotate(0deg); opacity: 1; }
+    50% { transform: scale(1.2) rotate(180deg); opacity: 0.8; }
+    100% { transform: scale(1) rotate(360deg); opacity: 0; }
+  }
+
+  @keyframes data-send {
+    0% { transform: translateY(0) scale(1); opacity: 1; }
+    50% { transform: translateY(-50px) scale(0.8); opacity: 0.6; }
+    100% { transform: translateY(-100px) scale(0.5); opacity: 0; }
+  }
+
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+    20%, 40%, 60%, 80% { transform: translateX(4px); }
+  }
+
+  @keyframes glow {
+    0%, 100% { box-shadow: 0 0 5px hsl(var(--primary)); }
+    50% { box-shadow: 0 0 20px hsl(var(--primary)), 0 0 30px hsl(var(--primary)); }
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+  }
+
+  .animate-mail-send { animation: mail-send 2s ease-out forwards; }
+  .animate-confetti { animation: confetti-burst 1s ease-out forwards; }
+  .animate-data-send { animation: data-send 1.5s ease-out forwards; }
+  .animate-shake { animation: shake 0.5s ease-in-out; }
+  .animate-glow { animation: glow 2s ease-in-out infinite; }
+  .animate-float { animation: float 3s ease-in-out infinite; }
+}
