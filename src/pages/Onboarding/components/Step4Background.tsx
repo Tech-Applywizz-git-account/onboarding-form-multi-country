@@ -41,7 +41,7 @@ export const Step4Background: React.FC<Step4Props> = ({
           >
             <Textarea
               {...register("felony_explanation")}
-              className="border-slate-300 focus:border-blue-500 focus:ring-0 bg-white"
+              className="border-slate-200 focus:border-blue-500 focus:ring-0 bg-white"
             />
           </FormField>
         )}
@@ -97,7 +97,7 @@ export const Step4Background: React.FC<Step4Props> = ({
           >
             <Textarea
               {...register("substances_description")}
-              className="border-slate-300 focus:border-blue-500 focus:ring-0 bg-white"
+              className="border-slate-200 focus:border-blue-500 focus:ring-0 bg-white"
             />
           </FormField>
         )}

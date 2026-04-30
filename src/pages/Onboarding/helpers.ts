@@ -26,13 +26,14 @@ export interface AddressSuggestion {
   country_code: string;
 }
 
-export const fetchAddressSuggestions = async (query: string): Promise<AddressSuggestion[]> => {
+export const fetchAddressSuggestions = async (query: string, countryCode?: string): Promise<AddressSuggestion[]> => {
   if (!query || query.length < 3) return [];
 
   try {
+    const codes = countryCode ? countryCode.toLowerCase() : "us,ca,gb,ie";
     const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
       query
-    )}&format=json&addressdetails=1&limit=5&countrycodes=us,ca,gb,ie`;
+    )}&format=json&addressdetails=1&limit=5&countrycodes=${codes}`;
 
     const response = await fetch(url, {
       headers: {
@@ -49,6 +50,47 @@ export const fetchAddressSuggestions = async (query: string): Promise<AddressSug
     }));
   } catch (error) {
     console.error("Geocoding error:", error);
+    return [];
+  }
+};
+
+export const fetchUniversities = async (query: string, country?: string) => {
+  if (!query || query.length < 2) return [];
+  try {
+    const url = `https://universities.hipolabs.com/search?name=${encodeURIComponent(query)}${country ? `&country=${encodeURIComponent(country)}` : ""}`;
+    const response = await fetch(url);
+    const data = await response.json();
+    return [...new Set(data.map((u: any) => u.name))] as string[];
+  } catch (error) {
+    console.error("Error fetching universities:", error);
+    return [];
+  }
+};
+
+export const fetchCities = async (query: string, country?: string) => {
+  if (!query || query.length < 2) return [];
+  try {
+    const codes = country ? country.toLowerCase() : "";
+    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&featuretype=city&limit=10${codes ? `&countrycodes=${codes}` : ""}`;
+    const response = await fetch(url);
+    const data = await response.json();
+    return data.map((item: any) => item.display_name);
+  } catch (error) {
+    console.error("Error fetching cities:", error);
+    return [];
+  }
+};
+
+export const fetchCompanies = async (query: string) => {
+  if (!query || query.length < 2) return [];
+  try {
+    const url = `https://autocomplete.clearbit.com/v1/companies/suggest?query=${encodeURIComponent(query)}`;
+    const response = await fetch(url);
+    if (!response.ok) return [];
+    const data = await response.json();
+    return data.map((c: any) => c.name);
+  } catch (error) {
+    console.error("Error fetching companies:", error);
     return [];
   }
 };

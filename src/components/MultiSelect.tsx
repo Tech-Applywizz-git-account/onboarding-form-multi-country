@@ -162,6 +162,7 @@ interface MultiSelectProps {
   options: Option[];
   selected: string[];
   onSelectionChange: (selected: string[]) => void;
+  onSearchChange?: (search: string) => void;
   placeholder?: string;
   className?: string;
   label?: string;
@@ -172,6 +173,7 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
   options,
   selected,
   onSelectionChange,
+  onSearchChange,
   placeholder = 'Select items...',
   className,
   label,
@@ -179,6 +181,11 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
 }) => {
   const [open, setOpen] = useState(false);
   const [searchValue, setSearchValue] = useState('');
+
+  const handleSearchChange = (val: string) => {
+    setSearchValue(val);
+    onSearchChange?.(val);
+  };
 
   const handleSelect = (value: string) => {
     const newSelected = selected.includes(value)
@@ -204,7 +211,7 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
             role="combobox"
             aria-expanded={open}
             className={cn(
-              'w-full justify-between min-h-[40px] h-auto input-field bg-blue-100 hover:text-white border-gray-200',
+              'w-full justify-between min-h-[44px] h-auto bg-slate-50/50 hover:bg-slate-50 border-slate-200 text-slate-700 shadow-sm transition-all',
               error && 'border-destructive'
             )}
           >
@@ -248,12 +255,12 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
           </Button>
         </PopoverTrigger>
 
-        <PopoverContent className="w-full p-0 glass-card border-card-border">
+        <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0 glass-card border-card-border" align="start">
           <Command className="bg-transparent">
             <CommandInput
               placeholder="Search..."
               value={searchValue}
-              onValueChange={setSearchValue}
+              onValueChange={handleSearchChange}
               className="border-none bg-transparent"
             />
             <CommandEmpty>No results found.</CommandEmpty>
