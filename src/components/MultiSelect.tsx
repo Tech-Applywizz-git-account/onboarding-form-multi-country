@@ -167,6 +167,7 @@ interface MultiSelectProps {
   className?: string;
   label?: string;
   error?: string;
+  disabled?: boolean;
 }
 
 const MultiSelect: React.FC<MultiSelectProps> = ({
@@ -178,6 +179,7 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
   className,
   label,
   error,
+  disabled,
 }) => {
   const [open, setOpen] = useState(false);
   const [searchValue, setSearchValue] = useState('');
@@ -210,6 +212,7 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
             type="button" // important: prevent form submission
             role="combobox"
             aria-expanded={open}
+            disabled={disabled}
             className={cn(
               'w-full justify-between min-h-[44px] h-auto bg-slate-50/50 hover:bg-slate-50 border-slate-200 text-slate-700 shadow-sm transition-all',
               error && 'border-destructive'

@@ -96,7 +96,6 @@ export const Step6Review: React.FC<Step6Props> = ({
         <ReviewItem label="Main Subject" value={data.main_subject} />
         <ReviewItem label="Graduation Year" value={data.graduation_year} />
         <ReviewItem label="Cumulative GPA" value={data.cgpa} />
-        <ReviewItem label="Education %" value={data.education_percentage} />
         <ReviewItem label="Total Experience" value={`${data.experience} Year(s)`} />
         <ReviewItem label="Employment Status" value={data.employment_status} />
         <ReviewItem label="Notice Period" value={data.notice_period} />
@@ -145,18 +144,26 @@ export const Step6Review: React.FC<Step6Props> = ({
         <div className="col-span-full mb-2">
           <h5 className="font-bold text-slate-700 text-[10px] uppercase tracking-tighter opacity-70">Identity & Preferences</h5>
         </div>
-        <ReviewItem label="Gender" value={data.gender} />
-        <ReviewItem label="Pronouns" value={data.pronouns} />
-        <ReviewItem label="Gender Identity" value={data.gender_identity} />
+        <ReviewItem label="Gender" value={data.gender === "Other" ? `Other - ${data.gender_other}` : data.gender} />
+        <ReviewItem label="Pronouns" value={data.pronouns === "Other" ? `Other - ${data.pronouns_other}` : data.pronouns} />
         <ReviewItem label="Sexual Orientation" value={data.sexual_orientation} />
         
         <div className="col-span-full mt-4 mb-2">
           <h5 className="font-bold text-slate-700 text-[10px] uppercase tracking-tighter opacity-70">Location & Professional</h5>
         </div>
-        <ReviewItem label="Based Country & Timezone" value={data.current_country_timezone} fullWidth />
-        {data.zip_or_country === "Canada" && <ReviewItem label="Province / Territory" value={data.province_territory} />}
-        {data.zip_or_country === "United Kingdom" && <ReviewItem label="County" value={data.county} />}
-        {data.zip_or_country === "United Kingdom" && <ReviewItem label="Religion" value={data.religion} />}
+        <ReviewItem 
+          label="Based Country & Timezone" 
+          value={data.current_country_timezone === "Other" ? `Other - ${data.current_country_timezone_other}` : data.current_country_timezone} 
+          fullWidth 
+        />
+        {data.zip_or_country === "Canada" && (
+          <ReviewItem label="Province / Territory" value={data.province_territory === "Other" ? `Other - ${data.province_territory_other}` : data.province_territory} />
+        )}
+        {data.zip_or_country === "United States" && (
+          <ReviewItem label="State" value={data.province_territory === "Other" ? `Other - ${data.province_territory_other}` : data.province_territory} />
+        )}
+        <ReviewItem label="County" value={data.county === "Other" ? `Other - ${data.county_other}` : data.county} />
+        <ReviewItem label="Religion" value={data.religion === "Other" ? `Other - ${data.religion_other}` : data.religion} />
         <ReviewItem label="Financial Industry Licenses?" value={data.financial_licenses === "yes" ? "Yes" : "No"} />
 
         {(data.zip_or_country === "United States" || (!["Canada", "United Kingdom", "Ireland"].includes(data.zip_or_country || ""))) && (
@@ -165,7 +172,7 @@ export const Step6Review: React.FC<Step6Props> = ({
               <h5 className="font-bold text-slate-700 text-[10px] uppercase tracking-tighter opacity-70">EEO (United States)</h5>
             </div>
             <ReviewItem label="Hispanic/Latino" value={data.is_hispanic_latino} />
-            <ReviewItem label="Race/Ethnicity" value={data.race_ethnicity} />
+            <ReviewItem label="Race/Ethnicity" value={data.race_ethnicity === "Other" ? `Other - ${data.race_ethnicity_other}` : data.race_ethnicity} />
             <ReviewItem label="Veteran Status" value={data.veteran_status} />
           </>
         )}
@@ -174,8 +181,6 @@ export const Step6Review: React.FC<Step6Props> = ({
           <h5 className="font-bold text-slate-700 text-[10px] uppercase tracking-tighter opacity-70">Additional Information</h5>
         </div>
         <ReviewItem label="Disability Status" value={data.disability_status} />
-        <ReviewItem label="Relatives in Company?" value={data.has_relatives_in_company === "yes" ? "Yes" : "No"} />
-        {data.has_relatives_in_company === "yes" && <ReviewItem label="Relative Details" value={data.relatives_details} fullWidth />}
       </ReviewSection>
     </div>
   );

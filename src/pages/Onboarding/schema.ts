@@ -50,14 +50,14 @@ export const schema = z.object({
   exclude_companies: z.array(z.string()).optional().default(["NA"]),
   job_role_preferences: z.array(z.string(), { invalid_type_error: "Please select at least one job role" }).min(1, "Please select at least one job role"),
   job_role_other: z.string().optional(),
-  location_preferences: z.array(z.string(), { invalid_type_error: "Please select at least one location" }).min(1, "Please select at least one location"),
+  location_preferences: z.array(z.string()).optional().default([]),
   willing_to_travel: yesNo,
   notice_period: z.string().min(1, "Required"),
   employment_status: z.enum(["Employed", "Unemployed"]),
   employment_history: z.array(z.object({
-    job_title: z.string().min(1, "Required"),
-    company_name: z.string().min(1, "Required"),
-    start_date: z.string().min(1, "Required"),
+    job_title: z.string().optional(),
+    company_name: z.string().optional(),
+    start_date: z.string().optional(),
     end_date: z.string().optional(),
     is_current: z.boolean().default(false),
   })).optional(),
@@ -77,19 +77,23 @@ export const schema = z.object({
   // Step 5
   gender: z.string().min(1, "Gender is required"),
   pronouns: z.string().optional(),
-  gender_identity: z.string().optional(),
   sexual_orientation: z.string().optional(),
   religion: z.string().optional(),
   is_hispanic_latino: z.string().optional(),
   race_ethnicity: z.string().optional(),
+  race_ethnicity_other: z.string().optional(),
   veteran_status: z.string().optional(),
   disability_status: z.string().min(1, "Required"),
-  financial_licenses: yesNo.optional(),
-  current_country_timezone: z.string().optional(),
+  financial_licenses: yesNo,
+  current_country_timezone: z.string().min(1, "Required"),
+  current_country_timezone_other: z.string().optional(),
   province_territory: z.string().optional(),
+  province_territory_other: z.string().optional(),
   county: z.string().optional(),
-  has_relatives_in_company: yesNo,
-  relatives_details: z.string().optional(),
+  county_other: z.string().optional(),
+  religion_other: z.string().optional(),
+  pronouns_other: z.string().optional(),
+  gender_other: z.string().optional(),
 
   // Form filled link
   form_filled_link: z.string().optional(),
@@ -97,6 +101,59 @@ export const schema = z.object({
   // Form status
   form_status: z.string().optional(),
 }).superRefine((data, ctx) => {
+  // Conditional Validation for Employment History
+  if (data.work_preferences?.includes("Remote")) {
+    if (!data.location_preferences || data.location_preferences.length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Please select at least one location",
+        path: ["location_preferences"],
+      });
+    }
+  }
+
+  // Conditional Validation for Employment History
+  if (data.experience && data.experience !== "0") {
+    if (!data.employment_history || data.employment_history.length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Please add at least one employment record based on your experience",
+        path: ["experience"],
+      });
+    } else {
+      data.employment_history.forEach((job, index) => {
+        if (!job.job_title || job.job_title.trim() === "") {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Required",
+            path: ["employment_history", index, "job_title"],
+          });
+        }
+        if (!job.company_name || job.company_name.trim() === "") {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Required",
+            path: ["employment_history", index, "company_name"],
+          });
+        }
+        if (!job.start_date || job.start_date.trim() === "") {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Required",
+            path: ["employment_history", index, "start_date"],
+          });
+        }
+        if (!job.is_current && (!job.end_date || job.end_date.trim() === "")) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Required",
+            path: ["employment_history", index, "end_date"],
+          });
+        }
+      });
+    }
+  }
+
   // Conditional Validation for Visa Type Other
   if (data.visatype === "Other") {
     if (!data.visatype_other || data.visatype_other.trim() === "") {
@@ -141,15 +198,49 @@ export const schema = z.object({
     }
   }
 
-  // Conditional Validation for Relatives in Company
-  if (data.has_relatives_in_company === "yes") {
-    if (!data.relatives_details || data.relatives_details.trim() === "") {
+  // Conditional Validation for Province/Territory (Canada)
+  if (data.zip_or_country === "Canada") {
+    if (!data.province_territory || data.province_territory.trim() === "") {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "Please provide details of your relatives",
-        path: ["relatives_details"],
+        message: "Required",
+        path: ["province_territory"],
       });
     }
+  }
+
+  // Conditional Validation for County (UK)
+  if (data.zip_or_country === "United Kingdom") {
+    if (!data.county || data.county.trim() === "") {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Required",
+        path: ["county"],
+      });
+    }
+  }
+
+  // Conditional Validation for 'Other' fields in Step 5
+  if (data.religion === "Other" && (!data.religion_other || data.religion_other.trim() === "")) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Required", path: ["religion_other"] });
+  }
+  if (data.province_territory === "Other" && (!data.province_territory_other || data.province_territory_other.trim() === "")) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Required", path: ["province_territory_other"] });
+  }
+  if (data.county === "Other" && (!data.county_other || data.county_other.trim() === "")) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Required", path: ["county_other"] });
+  }
+  if (data.pronouns === "Other" && (!data.pronouns_other || data.pronouns_other.trim() === "")) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Required", path: ["pronouns_other"] });
+  }
+  if (data.gender === "Other" && (!data.gender_other || data.gender_other.trim() === "")) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Required", path: ["gender_other"] });
+  }
+  if (data.current_country_timezone === "Other" && (!data.current_country_timezone_other || data.current_country_timezone_other.trim() === "")) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Required", path: ["current_country_timezone_other"] });
+  }
+  if (data.race_ethnicity === "Other" && (!data.race_ethnicity_other || data.race_ethnicity_other.trim() === "")) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Required", path: ["race_ethnicity_other"] });
   }
 });
 

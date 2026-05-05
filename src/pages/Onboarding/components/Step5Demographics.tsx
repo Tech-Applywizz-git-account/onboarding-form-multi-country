@@ -13,6 +13,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { YesNoField } from "./YesNoField";
 import { FormField } from "./FormField";
 
+import { 
+  RELIGIONS, 
+  CANADIAN_PROVINCES, 
+  UK_COUNTIES, 
+  IRELAND_COUNTIES,
+  USA_STATES,
+  GENDER_OPTIONS
+} from "../constants";
+
 interface Step5Props {
   register: UseFormRegister<FormVals>;
   errors: FieldErrors<FormVals>;
@@ -26,11 +35,20 @@ export const Step5Demographics: React.FC<Step5Props> = ({
   watch,
   setValue,
 }) => {
-  const hasRelatives = watch("has_relatives_in_company");
   const selectedCountry = watch("zip_or_country");
   const isUS = selectedCountry === "United States";
   const isCanada = selectedCountry === "Canada";
   const isUK = selectedCountry === "United Kingdom";
+  const isIreland = selectedCountry === "Ireland";
+
+  // Dynamic lists for County
+  const getCountyOptions = () => {
+    if (isUK) return UK_COUNTIES;
+    if (isIreland) return IRELAND_COUNTIES;
+    return [];
+  };
+
+  const countyOptions = getCountyOptions();
 
   return (
     <div className="space-y-8">
@@ -42,60 +60,52 @@ export const Step5Demographics: React.FC<Step5Props> = ({
         </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <FormField id="gender" label="Gender" required error={errors.gender}>
-            <Select
-              value={watch("gender") || ""}
-              onValueChange={(v) => setValue("gender", v, { shouldValidate: true })}
-            >
-              <SelectTrigger className="border-slate-200 focus:border-blue-500 focus:ring-0 h-11 bg-white">
-                <SelectValue placeholder="Select Gender" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Male">Male</SelectItem>
-                <SelectItem value="Female">Female</SelectItem>
-                <SelectItem value="Non-Binary">Non-Binary</SelectItem>
-                <SelectItem value="Prefer Not to Say">Decline to Self-Identify</SelectItem>
-              </SelectContent>
-            </Select>
-          </FormField>
+          <div className="space-y-2">
+            <FormField id="gender" label="Gender" required error={errors.gender}>
+              <Select
+                value={watch("gender") || ""}
+                onValueChange={(v) => setValue("gender", v, { shouldValidate: true })}
+              >
+                <SelectTrigger className="border-slate-200 focus:border-blue-500 focus:ring-0 h-11 bg-white">
+                  <SelectValue placeholder="Select Gender" />
+                </SelectTrigger>
+                <SelectContent>
+                  {GENDER_OPTIONS.map(opt => (
+                    <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                  ))}
+                  <SelectItem value="Other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </FormField>
+            {watch("gender") === "Other" && (
+              <Input {...register("gender_other")} placeholder="Specify gender" className="h-10 border-slate-200 animate-in fade-in slide-in-from-top-2" />
+            )}
+          </div>
 
-          <FormField id="pronouns" label="Pronoun" error={errors.pronouns}>
-            <Select
-              value={watch("pronouns") || ""}
-              onValueChange={(v) => setValue("pronouns", v, { shouldValidate: true })}
-            >
-              <SelectTrigger className="border-slate-200 focus:border-blue-500 focus:ring-0 h-11 bg-white">
-                <SelectValue placeholder="Select Pronoun" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="He/Him">He/Him</SelectItem>
-                <SelectItem value="She/Her">She/Her</SelectItem>
-                <SelectItem value="They/Them">They/Them</SelectItem>
-                <SelectItem value="Other">Other</SelectItem>
-              </SelectContent>
-            </Select>
-          </FormField>
+          <div className="space-y-2">
+            <FormField id="pronouns" label="Pronoun" error={errors.pronouns}>
+              <Select
+                value={watch("pronouns") || ""}
+                onValueChange={(v) => setValue("pronouns", v, { shouldValidate: true })}
+              >
+                <SelectTrigger className="border-slate-200 focus:border-blue-500 focus:ring-0 h-11 bg-white">
+                  <SelectValue placeholder="Select Pronoun" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="He/Him">He/Him</SelectItem>
+                  <SelectItem value="She/Her">She/Her</SelectItem>
+                  <SelectItem value="They/Them">They/Them</SelectItem>
+                  <SelectItem value="Other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </FormField>
+            {watch("pronouns") === "Other" && (
+              <Input {...register("pronouns_other")} placeholder="Specify pronouns" className="h-10 border-slate-200 animate-in fade-in slide-in-from-top-2" />
+            )}
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <FormField id="gender_identity" label="Gender Identity" error={errors.gender_identity}>
-            <Select
-              value={watch("gender_identity") || ""}
-              onValueChange={(v) => setValue("gender_identity", v, { shouldValidate: true })}
-            >
-              <SelectTrigger className="border-slate-200 focus:border-blue-500 focus:ring-0 h-11 bg-white">
-                <SelectValue placeholder="Select Identity" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Cisgender">Cisgender</SelectItem>
-                <SelectItem value="Transgender">Transgender</SelectItem>
-                <SelectItem value="Non-Binary">Non-Binary</SelectItem>
-                <SelectItem value="Genderqueer/Genderfluid">Genderqueer/Genderfluid</SelectItem>
-                <SelectItem value="Prefer Not to Say">Decline to Self-Identify</SelectItem>
-              </SelectContent>
-            </Select>
-          </FormField>
-
           <FormField id="sexual_orientation" label="Sexual Orientation" error={errors.sexual_orientation}>
             <Select
               value={watch("sexual_orientation") || ""}
@@ -125,46 +135,111 @@ export const Step5Demographics: React.FC<Step5Props> = ({
           Location & Professional
         </h3>
 
-        <FormField id="current_country_timezone" label="What country and time zone are you based in?" required error={errors.current_country_timezone}>
-          <Select
-            value={watch("current_country_timezone") || ""}
-            onValueChange={(v) => setValue("current_country_timezone", v, { shouldValidate: true })}
-          >
-            <SelectTrigger className="border-slate-200 focus:border-blue-500 focus:ring-0 h-11 bg-white">
-              <SelectValue placeholder="Select Country & Timezone" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="USA (EST)">USA (EST - Eastern)</SelectItem>
-              <SelectItem value="USA (CST)">USA (CST - Central)</SelectItem>
-              <SelectItem value="USA (MST)">USA (MST - Mountain)</SelectItem>
-              <SelectItem value="USA (PST)">USA (PST - Pacific)</SelectItem>
-              <SelectItem value="Canada (EST)">Canada (EST)</SelectItem>
-              <SelectItem value="Canada (CST)">Canada (CST)</SelectItem>
-              <SelectItem value="Canada (MST)">Canada (MST)</SelectItem>
-              <SelectItem value="Canada (PST)">Canada (PST)</SelectItem>
-              <SelectItem value="UK (GMT/BST)">UK (GMT/BST)</SelectItem>
-              <SelectItem value="Ireland (GMT/IST)">Ireland (GMT/IST)</SelectItem>
-              <SelectItem value="Other">Other / Not Listed</SelectItem>
-            </SelectContent>
-          </Select>
-        </FormField>
-
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {isCanada && (
-            <FormField id="province_territory" label="Province Or Territory" required error={errors.province_territory}>
-              <Input {...register("province_territory")} placeholder="e.g. Ontario" className="h-11 border-slate-200 bg-white" />
+          <div className="space-y-2">
+            <FormField id="current_country_timezone" label="What country and time zone are you based in?" required error={errors.current_country_timezone}>
+              <Select
+                value={watch("current_country_timezone") || ""}
+                onValueChange={(v) => setValue("current_country_timezone", v, { shouldValidate: true })}
+              >
+                <SelectTrigger className="border-slate-200 focus:border-blue-500 focus:ring-0 h-11 bg-white">
+                  <SelectValue placeholder="Select Country & Timezone" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="USA (EST)">USA (EST - Eastern)</SelectItem>
+                  <SelectItem value="USA (CST)">USA (CST - Central)</SelectItem>
+                  <SelectItem value="USA (MST)">USA (MST - Mountain)</SelectItem>
+                  <SelectItem value="USA (PST)">USA (PST - Pacific)</SelectItem>
+                  <SelectItem value="Canada (EST)">Canada (EST)</SelectItem>
+                  <SelectItem value="Canada (CST)">Canada (CST)</SelectItem>
+                  <SelectItem value="Canada (MST)">Canada (MST)</SelectItem>
+                  <SelectItem value="Canada (PST)">Canada (PST)</SelectItem>
+                  <SelectItem value="UK (GMT/BST)">UK (GMT/BST)</SelectItem>
+                  <SelectItem value="Ireland (GMT/IST)">Ireland (GMT/IST)</SelectItem>
+                  <SelectItem value="Other">Other</SelectItem>
+                </SelectContent>
+              </Select>
             </FormField>
+            {watch("current_country_timezone") === "Other" && (
+              <Input {...register("current_country_timezone_other")} placeholder="Specify location & timezone" className="h-10 border-slate-200 animate-in fade-in slide-in-from-top-2" />
+            )}
+          </div>
+
+          {(isCanada || isUS) && (
+            <div className="space-y-2">
+              <FormField 
+                id="province_territory" 
+                label={isCanada ? "Province Or Territory" : "State"} 
+                required={isCanada} 
+                error={errors.province_territory}
+              >
+                <Select
+                  value={watch("province_territory") || ""}
+                  onValueChange={(v) => setValue("province_territory", v, { shouldValidate: isCanada })}
+                >
+                  <SelectTrigger className="border-slate-200 h-11 bg-white">
+                    <SelectValue placeholder={isCanada ? "Select Province" : "Select State"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(isCanada ? CANADIAN_PROVINCES : USA_STATES).map(opt => (
+                      <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                    ))}
+                    <SelectItem value="Other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </FormField>
+              {watch("province_territory") === "Other" && (
+                <Input {...register("province_territory_other")} placeholder="Specify location" className="h-10 border-slate-200 animate-in fade-in slide-in-from-top-2" />
+              )}
+            </div>
           )}
-          {isUK && (
-            <FormField id="county" label="County" required error={errors.county}>
-              <Input {...register("county")} placeholder="e.g. Yorkshire" className="h-11 border-slate-200 bg-white" />
+          
+          <div className="space-y-2">
+            <FormField id="county" label="County" required={isUK} error={errors.county}>
+              {countyOptions.length > 0 ? (
+                <Select
+                  value={watch("county") || ""}
+                  onValueChange={(v) => setValue("county", v, { shouldValidate: isUK })}
+                >
+                  <SelectTrigger className="border-slate-200 h-11 bg-white">
+                    <SelectValue placeholder="Select County" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {countyOptions.map(opt => (
+                      <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                    ))}
+                    <SelectItem value="Other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Input {...register("county")} placeholder="Enter county" className="h-11 border-slate-200 bg-white" />
+              )}
             </FormField>
-          )}
-          {isUK && (
+            {watch("county") === "Other" && (
+              <Input {...register("county_other")} placeholder="Specify county" className="h-10 border-slate-200 animate-in fade-in slide-in-from-top-2" />
+            )}
+          </div>
+
+          <div className="space-y-2">
             <FormField id="religion" label="Religion" error={errors.religion}>
-              <Input {...register("religion")} placeholder="Enter religion" className="h-11 border-slate-200 bg-white" />
+              <Select
+                value={watch("religion") || ""}
+                onValueChange={(v) => setValue("religion", v, { shouldValidate: true })}
+              >
+                <SelectTrigger className="border-slate-200 h-11 bg-white">
+                  <SelectValue placeholder="Select Religion" />
+                </SelectTrigger>
+                <SelectContent>
+                  {RELIGIONS.map(opt => (
+                    <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </FormField>
-          )}
+            {watch("religion") === "Other" && (
+              <Input {...register("religion_other")} placeholder="Specify religion" className="h-10 border-slate-200 animate-in fade-in slide-in-from-top-2" />
+            )}
+          </div>
         </div>
 
         <YesNoField
@@ -201,29 +276,35 @@ export const Step5Demographics: React.FC<Step5Props> = ({
               </Select>
             </FormField>
 
-            <FormField id="race_ethnicity" label="Race/Ethnicity" error={errors.race_ethnicity}>
-              <Select
-                value={watch("race_ethnicity") || ""}
-                onValueChange={(v) => setValue("race_ethnicity", v, { shouldValidate: true })}
-              >
-                <SelectTrigger className="border-slate-200 focus:border-blue-500 focus:ring-0 h-11 bg-white">
-                  <SelectValue placeholder="Select" />
-                </SelectTrigger>
-                <SelectContent>
-                  {[
-                    "White",
-                    "Black or African American",
-                    "Asian",
-                    "Native Hawaiian or Other Pacific Islander",
-                    "American Indian or Alaska Native",
-                    "Two or More Races",
-                    "I don’t wish to answer",
-                  ].map((r) => (
-                    <SelectItem key={r} value={r}>{r}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </FormField>
+            <div className="space-y-2">
+              <FormField id="race_ethnicity" label="Race/Ethnicity" error={errors.race_ethnicity}>
+                <Select
+                  value={watch("race_ethnicity") || ""}
+                  onValueChange={(v) => setValue("race_ethnicity", v, { shouldValidate: true })}
+                >
+                  <SelectTrigger className="border-slate-200 focus:border-blue-500 focus:ring-0 h-11 bg-white">
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[
+                      "White",
+                      "Black or African American",
+                      "Asian",
+                      "Native Hawaiian or Other Pacific Islander",
+                      "American Indian or Alaska Native",
+                      "Two or More Races",
+                      "Other",
+                      "I don’t wish to answer",
+                    ].map((r) => (
+                      <SelectItem key={r} value={r}>{r}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FormField>
+              {watch("race_ethnicity") === "Other" && (
+                <Input {...register("race_ethnicity_other")} placeholder="Specify race/ethnicity" className="h-10 border-slate-200 animate-in fade-in slide-in-from-top-2" />
+              )}
+            </div>
           </div>
 
           <FormField id="veteran_status" label="Veteran Status" error={errors.veteran_status}>

@@ -56,11 +56,10 @@ const YEAR_OPTIONS = Array.from({ length: 61 }, (_, i) => (new Date().getFullYea
 
 const NOTICE_PERIOD_OPTIONS = [
   "Immediately",
-  "15 Days",
-  "30 Days",
-  "45 Days",
+  "2 weeks",
+  "1 month",
   "2 Months",
-  "3 Months",
+
 ];
 
 interface EmploymentHistoryRowProps {
@@ -73,6 +72,7 @@ interface EmploymentHistoryRowProps {
   jobRoleOptions: any[];
   jobRolesData: any[];
   alternateRolesOptions: string[];
+  errors: FieldErrors<FormVals>;
 }
 
 const EmploymentHistoryRow: React.FC<EmploymentHistoryRowProps> = ({
@@ -85,6 +85,7 @@ const EmploymentHistoryRow: React.FC<EmploymentHistoryRowProps> = ({
   jobRoleOptions,
   jobRolesData,
   alternateRolesOptions,
+  errors,
 }) => {
   const [jobSearch, setJobSearch] = useState("");
   const [jobOpen, setJobOpen] = useState(false);
@@ -98,7 +99,7 @@ const EmploymentHistoryRow: React.FC<EmploymentHistoryRowProps> = ({
 
   // Company Search Logic
   useEffect(() => {
-    if (compSearch.length < 2) {
+    if (compSearch.length < 1) {
       setCompSuggestions([]);
       return;
     }
@@ -107,7 +108,7 @@ const EmploymentHistoryRow: React.FC<EmploymentHistoryRowProps> = ({
       const results = await fetchCompanies(compSearch);
       setCompSuggestions(Array.from(new Set(results)));
       setCompLoading(false);
-    }, 500);
+    }, 400);
     return () => clearTimeout(timer);
   }, [compSearch]);
 
@@ -130,7 +131,12 @@ const EmploymentHistoryRow: React.FC<EmploymentHistoryRowProps> = ({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Job Title with Suggestions */}
-        <FormField id={`employment_history.${index}.job_title` as any} label="Job Title" required>
+        <FormField 
+          id={`employment_history.${index}.job_title` as any} 
+          label="Job Title" 
+          required 
+          error={(errors.employment_history as any)?.[index]?.job_title}
+        >
           <Popover open={jobOpen} onOpenChange={setJobOpen}>
             <PopoverTrigger asChild>
               <Button
@@ -174,7 +180,12 @@ const EmploymentHistoryRow: React.FC<EmploymentHistoryRowProps> = ({
         </FormField>
 
         {/* Company Name with Search & Add */}
-        <FormField id={`employment_history.${index}.company_name` as any} label="Company Name" required>
+        <FormField 
+          id={`employment_history.${index}.company_name` as any} 
+          label="Company Name" 
+          required 
+          error={(errors.employment_history as any)?.[index]?.company_name}
+        >
           <Popover open={compOpen} onOpenChange={setCompOpen}>
             <PopoverTrigger asChild>
               <Button
@@ -229,10 +240,20 @@ const EmploymentHistoryRow: React.FC<EmploymentHistoryRowProps> = ({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <FormField id={`employment_history.${index}.start_date` as any} label="Start Date" required>
+        <FormField 
+          id={`employment_history.${index}.start_date` as any} 
+          label="Start Date" 
+          required 
+          error={(errors.employment_history as any)?.[index]?.start_date}
+        >
           <Input type="date" {...register(`employment_history.${index}.start_date` as any)} className="h-11 border-slate-200 bg-white" />
         </FormField>
-        <FormField id={`employment_history.${index}.end_date` as any} label="End Date">
+        <FormField 
+          id={`employment_history.${index}.end_date` as any} 
+          label="End Date"
+          required={!watch(`employment_history.${index}.is_current` as any)}
+          error={(errors.employment_history as any)?.[index]?.end_date}
+        >
           <Input
             type="date"
             {...register(`employment_history.${index}.end_date` as any)}
@@ -270,6 +291,7 @@ export const Step3Education: React.FC<Step3Props> = ({
   const locations = Array.isArray(watch("location_preferences")) ? watch("location_preferences") : [];
   const workPrefs = Array.isArray(watch("work_preferences")) ? watch("work_preferences") : [];
   const employmentStatus = watch("employment_status");
+  const experience = watch("experience");
   const universityName = watch("university_name");
 
   const { fields, append, remove } = useFieldArray({
@@ -292,7 +314,7 @@ export const Step3Education: React.FC<Step3Props> = ({
   const [compLoading, setCompLoading] = useState(false);
 
   useEffect(() => {
-    if (uniSearch.length < 2) {
+    if (uniSearch.length < 1) {
       setUniSuggestions([]);
       return;
     }
@@ -302,12 +324,12 @@ export const Step3Education: React.FC<Step3Props> = ({
       // Filter unique university names
       setUniSuggestions(Array.from(new Set(results)));
       setUniLoading(false);
-    }, 300);
+    }, 200);
     return () => clearTimeout(timer);
   }, [uniSearch, selectedCountry]);
 
   useEffect(() => {
-    if (locSearch.length < 2) {
+    if (locSearch.length < 1) {
       setLocSuggestions([]);
       return;
     }
@@ -317,12 +339,12 @@ export const Step3Education: React.FC<Step3Props> = ({
       // Filter unique location names
       setLocSuggestions(Array.from(new Set(results)));
       setLocLoading(false);
-    }, 500);
+    }, 400);
     return () => clearTimeout(timer);
   }, [locSearch, selectedCountry]);
 
   useEffect(() => {
-    if (compSearch.length < 2) {
+    if (compSearch.length < 1) {
       setCompSuggestions([]);
       return;
     }
@@ -332,16 +354,16 @@ export const Step3Education: React.FC<Step3Props> = ({
       // Filter unique company names
       setCompSuggestions(Array.from(new Set(results)));
       setCompLoading(false);
-    }, 500);
+    }, 400);
     return () => clearTimeout(timer);
   }, [compSearch]);
 
-  // Auto-append first job entry when status changes to Employed
+  // Auto-append first job entry when experience > 0
   useEffect(() => {
-    if (employmentStatus === "Employed" && fields.length === 0) {
+    if (experience && experience !== "0" && fields.length === 0) {
       append({ job_title: "", company_name: "", start_date: "", is_current: false });
     }
-  }, [employmentStatus, fields.length, append]);
+  }, [experience, fields.length, append]);
 
   return (
     <div className="space-y-8">
@@ -420,7 +442,7 @@ export const Step3Education: React.FC<Step3Props> = ({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <FormField id="main_subject" label="Major/ Minor subject" required error={errors.main_subject}>
+        <FormField id="main_subject" label="Major/ Minor" required error={errors.main_subject}>
           <Input
             {...register("main_subject")}
             placeholder="e.g., Computer Science"
@@ -516,36 +538,61 @@ export const Step3Education: React.FC<Step3Props> = ({
           <Input type="date" {...register("desired_start_date")} className="h-11 border-slate-200 focus:border-blue-500 focus:ring-0" />
         </FormField>
 
-        <FormField id="salary_expectations" label="Salary Expectations" required error={errors.salary_expectations}>
-          <MultiSelect
-            placeholder="Select Salary Ranges..."
-            options={Object.entries(SALARY_RANGES[selectedCountry] || SALARY_RANGES["United States"]).flatMap(([type, ranges]) =>
-              ranges.map(r => ({ label: `${type}: ${r.label}`, value: `${type}:${r.value}` }))
-            )}
-            selected={(watch("salary_expectations") || "").split(",").filter(Boolean)}
-            onSelectionChange={(arr) => {
-              const latestItem = arr.length > 0 ? arr[arr.length - 1] : null;
-              let finalArr = arr;
-              if (latestItem) {
-                const [category] = latestItem.split(":");
-                finalArr = arr.filter(item => {
-                  if (item === latestItem) return true;
-                  return !item.startsWith(category + ":");
-                });
-              }
-              setValue("salary_expectations", finalArr.join(","), { shouldValidate: true });
-            }}
-          />
-        </FormField>
+        <div className="grid grid-cols-2 gap-4">
+          <FormField id="salary_expectations_yearly" label="Yearly Salary Expectation" error={undefined}>
+            <Select
+              value={(watch("salary_expectations") || "").split(",").find(s => s.startsWith("Yearly:"))?.replace("Yearly:", "") || ""}
+              onValueChange={(v) => {
+                const current = (watch("salary_expectations") || "").split(",").filter(Boolean).filter(s => !s.startsWith("Yearly:"));
+                setValue("salary_expectations", v ? [...current, `Yearly:${v}`].join(",") : current.join(","), { shouldValidate: true });
+              }}
+            >
+              <SelectTrigger className="h-11 border-slate-200">
+                <SelectValue placeholder="Select Yearly Range" />
+              </SelectTrigger>
+              <SelectContent>
+                {(SALARY_RANGES[selectedCountry]?.Yearly || SALARY_RANGES["United States"].Yearly).map(r => (
+                  <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FormField>
+
+          <FormField id="salary_expectations_hourly" label="Hourly Rate Expectation" error={undefined}>
+            <Select
+              value={(watch("salary_expectations") || "").split(",").find(s => s.startsWith("Hourly:"))?.replace("Hourly:", "") || ""}
+              onValueChange={(v) => {
+                const current = (watch("salary_expectations") || "").split(",").filter(Boolean).filter(s => !s.startsWith("Hourly:"));
+                setValue("salary_expectations", v ? [...current, `Hourly:${v}`].join(",") : current.join(","), { shouldValidate: true });
+              }}
+            >
+              <SelectTrigger className="h-11 border-slate-200">
+                <SelectValue placeholder="Select Hourly Rate" />
+              </SelectTrigger>
+              <SelectContent>
+                {(SALARY_RANGES[selectedCountry]?.Hourly || SALARY_RANGES["United States"].Hourly || []).map(r => (
+                  <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FormField>
+          {errors.salary_expectations && <p className="col-span-2 text-sm text-destructive">{errors.salary_expectations.message}</p>}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2">
           <MultiSelect
             label="Work Preferences *"
-            options={["On-site", "Remote", "Hybrid"].map(o => ({ label: o, value: o }))}
+            options={["All", "On-site", "Remote", "Hybrid"].map(o => ({ label: o, value: o }))}
             selected={workPrefs}
-            onSelectionChange={(arr) => setValue("work_preferences", arr, { shouldValidate: true })}
+            onSelectionChange={(arr) => {
+              if (arr.includes("All")) {
+                setValue("work_preferences", ["On-site", "Remote", "Hybrid"], { shouldValidate: true });
+              } else {
+                setValue("work_preferences", arr.filter(v => v !== "All"), { shouldValidate: true });
+              }
+            }}
           />
           {errors.work_preferences && (
             <p className="text-sm text-destructive">{errors.work_preferences.message}</p>
@@ -555,12 +602,13 @@ export const Step3Education: React.FC<Step3Props> = ({
         <div className="space-y-2">
           <MultiSelect
             label="Location Preferences *"
-            placeholder="Search and select cities..."
-            options={Array.from(new Set([...locations, ...locSuggestions])).map(city => ({ label: city, value: city }))}
+            placeholder={workPrefs.includes("Remote") ? "Search and select states/provinces..." : "Select 'Remote' to enable"}
+            options={workPrefs.includes("Remote") ? Array.from(new Set([...locations, ...locSuggestions])).map(city => ({ label: city, value: city })) : []}
             selected={locations}
             onSelectionChange={(arr) => setValue("location_preferences", arr, { shouldValidate: true })}
-            onSearchChange={setLocSearch}
+            onSearchChange={workPrefs.includes("Remote") ? setLocSearch : undefined}
             error={errors.location_preferences?.message}
+            disabled={!workPrefs.includes("Remote")}
           />
         </div>
       </div>
@@ -687,8 +735,7 @@ export const Step3Education: React.FC<Step3Props> = ({
           </Select>
         </FormField>
 
-        {employmentStatus === "Employed" && (
-          <div className="space-y-6 animate-in fade-in slide-in-from-top-2 duration-300">
+        <div className="space-y-6 animate-in fade-in slide-in-from-top-2 duration-300">
             <div className="flex items-center justify-between border-b border-slate-100 pb-2">
               <div className="flex items-center gap-2">
                 <Briefcase className="h-5 w-5 text-blue-600" />
@@ -716,6 +763,7 @@ export const Step3Education: React.FC<Step3Props> = ({
                 jobRoleOptions={jobRoleOptions}
                 jobRolesData={jobRolesData}
                 alternateRolesOptions={alternateRolesOptions}
+                errors={errors}
               />
             ))}
 
@@ -725,7 +773,6 @@ export const Step3Education: React.FC<Step3Props> = ({
               </div>
             )}
           </div>
-        )}
       </div>
     </div>
   );

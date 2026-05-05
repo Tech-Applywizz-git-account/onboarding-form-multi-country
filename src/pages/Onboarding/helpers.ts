@@ -54,35 +54,75 @@ export const fetchAddressSuggestions = async (query: string, countryCode?: strin
   }
 };
 
-export const fetchUniversities = async (query: string, country?: string) => {
-  if (!query || query.length < 2) return [];
-  try {
-    const url = `https://universities.hipolabs.com/search?name=${encodeURIComponent(query)}${country ? `&country=${encodeURIComponent(country)}` : ""}`;
-    const response = await fetch(url);
-    const data = await response.json();
-    return [...new Set(data.map((u: any) => u.name))] as string[];
-  } catch (error) {
-    console.error("Error fetching universities:", error);
-    return [];
+// Country name → ISO 2-letter code mapping for OpenAlex API filter
+const COUNTRY_TO_ISO: Record<string, string> = {
+  "United States": "US",
+  "United Kingdom": "GB",
+  "Canada": "CA",
+  "Ireland": "IE",
+};
+
+export const fetchUniversities = async (query: string, country?: string): Promise<string[]> => {
+  if (!query || query.length < 1) return [];
+
+  // Step 1: Always search local dataset first (instant, works offline)
+  const { searchUniversitiesLocally } = await import("./universityData");
+  let localResults = searchUniversitiesLocally(query, country);
+
+  // If local results are empty for the specific country, fall back to global local search
+  if (localResults.length === 0 && country) {
+    localResults = searchUniversitiesLocally(query, undefined);
   }
+
+  // Step 2: Also call OpenAlex API to supplement with broader results
+  try {
+    const isoCode = country ? COUNTRY_TO_ISO[country] : undefined;
+    const countryFilter = isoCode && localResults.length > 0 ? `,country_code:${isoCode}` : "";
+    const url = `https://api.openalex.org/institutions?filter=type:education,display_name.search:${encodeURIComponent(query)}${countryFilter}&per-page=10&select=display_name`;
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 4000);
+    const response = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeout);
+
+    if (response.ok) {
+      const data = await response.json();
+      let apiResults: string[] = data.results?.map((u: any) => u.display_name).filter(Boolean) ?? [];
+      
+      // If no API results with country filter, and we haven't already dropped the filter
+      if (apiResults.length === 0 && isoCode && countryFilter) {
+        const globalUrl = `https://api.openalex.org/institutions?filter=type:education,display_name.search:${encodeURIComponent(query)}&per-page=10&select=display_name`;
+        const globalRes = await fetch(globalUrl);
+        if (globalRes.ok) {
+          const globalData = await globalRes.json();
+          apiResults = globalData.results?.map((u: any) => u.display_name).filter(Boolean) ?? [];
+        }
+      }
+
+      // Merge: local first (ranked higher), then any API-only results
+      const merged = [...new Set([...localResults, ...apiResults])];
+      return merged.slice(0, 15);
+    }
+  } catch {
+    // API failed or timed out — local results are sufficient
+  }
+
+  return localResults;
 };
 
 export const fetchCities = async (query: string, country?: string) => {
-  if (!query || query.length < 2) return [];
+  if (!query || query.length < 1) return [];
   try {
-    const codes = country ? country.toLowerCase() : "";
-    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&featuretype=city&limit=10${codes ? `&countrycodes=${codes}` : ""}`;
-    const response = await fetch(url);
-    const data = await response.json();
-    return data.map((item: any) => item.display_name);
+    const { searchStatesLocally } = await import("./statesData");
+    return searchStatesLocally(query, country);
   } catch (error) {
-    console.error("Error fetching cities:", error);
+    console.error("Error fetching states:", error);
     return [];
   }
 };
 
 export const fetchCompanies = async (query: string) => {
-  if (!query || query.length < 2) return [];
+  if (!query || query.length < 1) return [];
   try {
     const url = `https://autocomplete.clearbit.com/v1/companies/suggest?query=${encodeURIComponent(query)}`;
     const response = await fetch(url);

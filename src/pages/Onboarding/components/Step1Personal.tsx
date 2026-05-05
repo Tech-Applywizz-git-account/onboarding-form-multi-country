@@ -190,7 +190,7 @@ export const Step1Personal = ({
             placeholder="Last Name"
           />
         </FormField>
-        <FormField id="zip_or_country" label="Primary Country of Interest" required error={errors.zip_or_country}>
+        <FormField id="zip_or_country" label="Country" required error={errors.zip_or_country}>
           <Select
             value={selectedCountry || ""}
             onValueChange={(v) => setValue("zip_or_country", v, { shouldValidate: true })}
@@ -270,9 +270,16 @@ export const Step1Personal = ({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <FormField id="primary_phone" label="Primary Phone" required error={errors.primary_phone}>
           <div className="flex gap-0 h-11">
-            <div className="w-[80px] flex items-center justify-center border border-slate-200 border-r-0 rounded-l-md bg-slate-50 text-slate-900 font-semibold text-sm h-11 select-none">
-              {primaryPhoneCode}
-            </div>
+            <Select value={primaryPhoneCode} onValueChange={setPrimaryPhoneCode}>
+              <SelectTrigger className="w-[100px] border-slate-200 border-r-0 rounded-r-none bg-slate-50 focus:ring-0">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {PHONE_CODES.map(pc => (
+                  <SelectItem key={pc.value} value={pc.value}>{pc.value}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Input
               value={primaryPhoneNumber}
               onChange={(e) => handlePhoneInput(e.target.value, setPrimaryPhoneNumber)}

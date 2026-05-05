@@ -28,6 +28,63 @@ import { Step4Background } from "./components/Step4Background";
 import { Step5Demographics } from "./components/Step5Demographics";
 import { Step6Review } from "./components/Step6Review";
 
+const FIELD_LABELS: Record<string, string> = {
+  first_name: "First Name",
+  last_name: "Last Name",
+  personal_email: "Email Address",
+  primary_phone: "Primary Phone",
+  whatsapp_number: "WhatsApp Number",
+  full_address: "Full Address",
+  visatype: "Visa Type",
+  visatype_other: "Other Visa Type",
+  date_of_birth: "Date of Birth",
+  zip_or_country: "Country",
+  resume_dummy: "Resume/CV Attachment",
+  is_over_18: "Age Eligibility",
+  eligible_to_work_in_us: "Work Eligibility",
+  authorized_without_visa: "Visa Authorization",
+  require_future_sponsorship: "Sponsorship Needs",
+  can_perform_essential_functions: "Essential Functions",
+  discharged_for_policy_violation: "Policy Violation",
+  referred_by_agency: "Agency Referral",
+  highest_education: "Highest Education",
+  university_name: "University Name",
+  main_subject: "Major/Minor",
+  graduation_year: "Graduation Year",
+  cgpa: "GPA/Percentage",
+  desired_start_date: "Desired Start Date",
+  willing_to_relocate: "Willingness to Relocate",
+  can_work_3_days_in_office: "In-office Availability",
+  salary_expectations: "Salary Expectations",
+  role: "Job Role",
+  experience: "Experience Level",
+  work_preferences: "Work Preferences",
+  job_role_preferences: "Job Role Preference",
+  location_preferences: "Location Preference",
+  willing_to_travel: "Willingness to Travel",
+  notice_period: "Notice Period",
+  employment_status: "Employment Status",
+  employment_history: "Employment History",
+  convicted_of_felony: "Felony Record",
+  pending_investigation: "Pending Investigation",
+  willing_background_check: "Background Check",
+  willing_drug_screen: "Drug Screen",
+  failed_or_refused_drug_test: "Drug Test History",
+  uses_substances_affecting_duties: "Substance Use",
+  can_provide_legal_docs: "Legal Documentation",
+  gender: "Gender",
+  pronouns: "Pronoun",
+  religion: "Religion",
+  is_hispanic_latino: "Hispanic/Latino Status",
+  race_ethnicity: "Race/Ethnicity",
+  veteran_status: "Veteran Status",
+  disability_status: "Disability Status",
+  financial_licenses: "Financial Services Industry Licenses",
+  current_country_timezone: "Current Country & Timezone",
+  province_territory: "Province / Territory",
+  county: "County",
+};
+
 const OnboardingPage: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -78,8 +135,8 @@ const OnboardingPage: React.FC = () => {
 
       // Step 2
       is_over_18: "yes",
-      eligible_to_work_in_us: "no",
-      authorized_without_visa: "no",
+      eligible_to_work_in_us: "yes",
+      authorized_without_visa: "yes",
       require_future_sponsorship: "no",
       can_perform_essential_functions: "yes",
       discharged_for_policy_violation: "no",
@@ -92,7 +149,7 @@ const OnboardingPage: React.FC = () => {
       graduation_year: "",
       cgpa: "",
       desired_start_date: "",
-      willing_to_relocate: "no",
+      willing_to_relocate: "yes",
       can_work_3_days_in_office: "no",
       salary_expectations: "",
       salary_period: "Yearly",
@@ -105,7 +162,7 @@ const OnboardingPage: React.FC = () => {
       job_role_preferences: [],
       job_role_other: "",
       location_preferences: [],
-      willing_to_travel: "no",
+      willing_to_travel: "yes",
       notice_period: "",
       employment_status: "Unemployed",
       employment_history: [],
@@ -119,12 +176,11 @@ const OnboardingPage: React.FC = () => {
       failed_or_refused_drug_test: "no",
       uses_substances_affecting_duties: "no",
       substances_description: "",
-      can_provide_legal_docs: "no",
+      can_provide_legal_docs: "yes",
 
       // Step 5
       gender: "",
       pronouns: "",
-      gender_identity: "",
       sexual_orientation: "",
       religion: "",
       is_hispanic_latino: "",
@@ -135,8 +191,6 @@ const OnboardingPage: React.FC = () => {
       current_country_timezone: "",
       province_territory: "",
       county: "",
-      has_relatives_in_company: "yes",
-      relatives_details: "",
 
       // Metadata
       form_filled_link: typeof window !== 'undefined' ? window.location.href : '',
@@ -241,9 +295,9 @@ const OnboardingPage: React.FC = () => {
   const stepFieldMap: Record<number, (keyof FormVals)[]> = {
     1: ["first_name", "last_name", "personal_email", "primary_phone", "whatsapp_number", "full_address", "visatype", "visatype_other", "date_of_birth", "zip_or_country", "resume_dummy"],
     2: ["is_over_18", "eligible_to_work_in_us", "authorized_without_visa", "require_future_sponsorship", "can_perform_essential_functions", "discharged_for_policy_violation", "referred_by_agency"],
-    3: ["highest_education", "university_name", "main_subject", "graduation_year", "desired_start_date", "willing_to_relocate", "can_work_3_days_in_office", "salary_expectations", "salary_period", "role", "experience", "work_preferences", "job_role_preferences", "location_preferences", "willing_to_travel", "notice_period", "employment_status", "employment_history", "alternate_job_roles", "has_alternates_available"],
+    3: ["highest_education", "university_name", "main_subject", "graduation_year", "cgpa", "desired_start_date", "willing_to_relocate", "can_work_3_days_in_office", "salary_expectations", "salary_period", "role", "experience", "work_preferences", "job_role_preferences", "location_preferences", "willing_to_travel", "notice_period", "employment_status", "employment_history", "alternate_job_roles", "has_alternates_available"],
     4: ["convicted_of_felony", "felony_explanation", "pending_investigation", "willing_background_check", "willing_drug_screen", "failed_or_refused_drug_test", "uses_substances_affecting_duties", "substances_description", "can_provide_legal_docs"],
-    5: ["gender", "is_hispanic_latino", "race_ethnicity", "veteran_status", "disability_status", "has_relatives_in_company", "relatives_details"],
+    5: ["gender", "pronouns", "religion", "is_hispanic_latino", "race_ethnicity", "veteran_status", "disability_status", "financial_licenses", "current_country_timezone", "province_territory", "county"],
     6: [],
   };
 
@@ -253,11 +307,20 @@ const OnboardingPage: React.FC = () => {
   };
 
   const nextStep = async () => {
-    const ok = await trigger(stepFieldMap[step] as any, { shouldFocus: true });
+    const fieldsToValidate = stepFieldMap[step];
+    const ok = await trigger(fieldsToValidate as any, { shouldFocus: true });
+    
     if (!ok) {
+      // Get missing field labels
+      const missingFields = fieldsToValidate
+        .filter(field => errors[field])
+        .map(field => FIELD_LABELS[field] || field);
+
       toast({
-        title: "Missing Fields",
-        description: "Please fill in all required fields highlighted in red (*).",
+        title: "Incomplete Step",
+        description: missingFields.length > 0 
+          ? `Please complete: ${missingFields.join(", ")}` 
+          : "Please check the required fields highlighted in red.",
         variant: "destructive",
       });
       return;
@@ -373,21 +436,18 @@ const OnboardingPage: React.FC = () => {
         uses_substances_affecting_duties: ynToBool(data.uses_substances_affecting_duties),
         substances_description: data.substances_description || null,
         can_provide_legal_docs: ynToBool(data.can_provide_legal_docs),
-        gender: data.gender || null,
+        gender: data.gender === "Other" ? `Other - ${data.gender_other}` : data.gender || null,
         is_hispanic_latino: data.is_hispanic_latino || null,
-        race_ethnicity: data.race_ethnicity || null,
+        race_ethnicity: data.race_ethnicity === "Other" ? `Other - ${data.race_ethnicity_other}` : data.race_ethnicity || null,
         veteran_status: data.veteran_status || null,
         disability_status: data.disability_status || null,
         financial_licenses: ynToBool(data.financial_licenses),
-        current_country_timezone: data.current_country_timezone || null,
-        province_territory: data.province_territory || null,
-        county: data.county || null,
-        religion: data.religion || null,
+        current_country_timezone: data.current_country_timezone === "Other" ? `Other - ${data.current_country_timezone_other}` : data.current_country_timezone || null,
+        province_territory: data.province_territory === "Other" ? `Other - ${data.province_territory_other}` : data.province_territory || null,
+        county: data.county === "Other" ? `Other - ${data.county_other}` : data.county || null,
+        religion: data.religion === "Other" ? `Other - ${data.religion_other}` : data.religion || null,
         sexual_orientation: data.sexual_orientation || null,
-        gender_identity: data.gender_identity || null,
-        pronouns: data.pronouns || null,
-        has_relatives_in_company: ynToBool(data.has_relatives_in_company),
-        relatives_details: data.relatives_details || null,
+        pronouns: data.pronouns === "Other" ? `Other - ${data.pronouns_other}` : data.pronouns || null,
         form_filled_link: window.location.href,
         form_status: window.location.href.includes('apply-wizz.me') ? 'CORRECT' : 'DIFFERENT',
       };
@@ -459,7 +519,6 @@ const OnboardingPage: React.FC = () => {
       location_preferences: ["New York", "San Francisco"],
       willing_to_travel: "yes",
       notice_period: "30 Days",
-      education_percentage: "92",
       employment_status: "Employed",
       recent_job_title: "Senior Developer",
       recent_company_name: "Google",

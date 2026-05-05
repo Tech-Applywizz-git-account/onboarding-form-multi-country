@@ -22,7 +22,7 @@ export const COUNTRY_DATA: Record<string, {
   date_format: string;
 }> = {
   "United States": {
-    visa_types: ["F1-CPT", "F1-OPT", "F1-STEM OPT", "H1B", "H4 EAD", "Green Card", "Citizen", "J1", "L1"],
+    visa_types: ["F1-CPT", "F1-OPT", "F1-STEM OPT", "H1B", "H4 EAD", "Green Card", "Citizen", "J1", "L1", "Day-1 CPT"],
     salary_types: ["Yearly", "Hourly"],
     currency: "USD",
     currency_symbol: "$",
@@ -155,3 +155,105 @@ export const jobRoleOptions = [
   { value: 'Embedded Software Engineer', label: 'Embedded Software Engineer' },
   { value: 'Environmental Health and Safety (EHS)', label: 'Environmental Health and Safety (EHS)' },
 ].filter(role => !role.value.includes(',') && !role.value.toLowerCase().includes('for'));
+export const RELIGIONS = [
+  "Christianity",
+  "Islam",
+  "Hinduism",
+  "Buddhism",
+  "Sikhism",
+  "Judaism",
+  "Bahá'í",
+  "Jainism",
+  "Shinto",
+  "No Religion (Atheist/Agnostic)",
+  "Other",
+];
+
+export const CANADIAN_PROVINCES = [
+  "Alberta",
+  "British Columbia",
+  "Manitoba",
+  "New Brunswick",
+  "Newfoundland and Labrador",
+  "Nova Scotia",
+  "Ontario",
+  "Prince Edward Island",
+  "Quebec",
+  "Saskatchewan",
+  "Northwest Territories",
+  "Nunavut",
+  "Yukon",
+];
+
+export const UK_COUNTIES = [
+  "Bedfordshire", "Berkshire", "Buckinghamshire", "Cambridgeshire", "Cheshire", 
+  "Cornwall", "Cumbria", "Derbyshire", "Devon", "Dorset", "Durham", "Essex", 
+  "Gloucestershire", "Greater London", "Greater Manchester", "Hampshire", 
+  "Herefordshire", "Hertfordshire", "Isle of Wight", "Kent", "Lancashire", 
+  "Leicestershire", "Lincolnshire", "Merseyside", "Norfolk", "Northamptonshire", 
+  "Northumberland", "Nottinghamshire", "Oxfordshire", "Rutland", "Shropshire", 
+  "Somerset", "Staffordshire", "Suffolk", "Surrey", "Sussex", "Tyne and Wear", 
+  "Warwickshire", "West Midlands", "Wiltshire", "Worcestershire", "Yorkshire"
+];
+
+export const IRELAND_COUNTIES = [
+  "Carlow", "Cavan", "Clare", "Cork", "Donegal", "Dublin", "Galway", "Kerry", 
+  "Kildare", "Kilkenny", "Laois", "Leitrim", "Limerick", "Longford", "Louth", 
+  "Mayo", "Meath", "Monaghan", "Offaly", "Roscommon", "Sligo", "Tipperary", 
+  "Waterford", "Westmeath", "Wexford", "Wicklow"
+];
+
+export const USA_STATES = [
+  "Alabama", "Alaska", "Arizona", "Arkansas", "California", "Colorado", 
+  "Connecticut", "Delaware", "Florida", "Georgia", "Hawaii", "Idaho", 
+  "Illinois", "Indiana", "Iowa", "Kansas", "Kentucky", "Louisiana", 
+  "Maine", "Maryland", "Massachusetts", "Michigan", "Minnesota", 
+  "Mississippi", "Missouri", "Montana", "Nebraska", "Nevada", 
+  "New Hampshire", "New Jersey", "New Mexico", "New York", 
+  "North Carolina", "North Dakota", "Ohio", "Oklahoma", "Oregon", 
+  "Pennsylvania", "Rhode Island", "South Carolina", "South Dakota", 
+  "Tennessee", "Texas", "Utah", "Vermont", "Virginia", "Washington", 
+  "West Virginia", "Wisconsin", "Wyoming"
+];
+
+export const GENDER_OPTIONS = [
+  "Man",
+  "Woman",
+  "Boy",
+  "Girl",
+  "Transgender",
+  "Non-Binary",
+  // Alphabetical rest
+  "Agender",
+  "Androgyne",
+  "Bigender",
+  "Binary",
+  "Cisgender",
+  "Demiboy",
+  "Demigender",
+  "Demigirl",
+  "Enby",
+  "Gender Non-Binary",
+  "Gender Non-Conforming",
+  "Genderfluid",
+  "Genderflux",
+  "Genderless",
+  "Genderqueer",
+  "Intergender",
+  "Intersex",
+  "Neutral",
+  "Neutrois",
+  "Non-Gender",
+  "None",
+  "Pangender",
+  "Polygender",
+  "Queer",
+  "Questioning or Unknown",
+  "Third Gender",
+  "Trans",
+  "Transfeminine",
+  "Transmasculine",
+  "Tri-Gender",
+  "Two-Spirit",
+  "Prefer not to say",
+];
