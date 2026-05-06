@@ -210,8 +210,8 @@ export const schema = z.object({
     }
   }
 
-  // Conditional Validation for Province/Territory (Canada)
-  if (data.zip_or_country === "Canada") {
+  // Conditional Validation for Province/Territory (Canada or USA)
+  if (data.zip_or_country === "Canada" || data.zip_or_country === "United States") {
     if (!data.province_territory || data.province_territory.trim() === "") {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
