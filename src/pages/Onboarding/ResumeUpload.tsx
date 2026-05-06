@@ -62,14 +62,14 @@ const ResumeUpload: React.FC = () => {
   return (
     <div className="h-screen w-screen bg-[#F8F9FA] flex flex-col font-sans overflow-hidden">
       {/* Header - Compact */}
-      <header className="h-12 bg-white border-b border-slate-200 flex items-center px-6 md:px-10 flex-shrink-0 shadow-sm z-10">
+      {/* <header className="h-12 bg-white border-b border-slate-200 flex items-center px-6 md:px-10 flex-shrink-0 shadow-sm z-10">
         <div className="flex items-center gap-2">
           <div className="bg-[#1A1A1A] p-1 rounded-md">
             <span className="text-white font-black text-sm tracking-tighter">AW</span>
           </div>
           <span className="text-lg font-bold text-slate-900 tracking-tight">ApplyWizz</span>
         </div>
-      </header>
+      </header> */}
 
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col items-center justify-center p-4 overflow-hidden">

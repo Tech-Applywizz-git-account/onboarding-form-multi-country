@@ -77,22 +77,30 @@ export const AuthProvider: React.FC<React.PropsWithChildren<{}>> = ({ children }
       const stored = localStorage.getItem(SESSION_KEY);
       if (!stored) return null;
 
-      const session = JSON.parse(stored) as AuthSession;
-      const now = Date.now();
+      const session = JSON.parse(stored);
+      
+      // Migration/Safety check: If the stored data is old format (doesn't have .user) 
+      // or missing .timestamp, clear it and force re-login
+      if (!session || !session.user || !session.timestamp) {
+        localStorage.removeItem(SESSION_KEY);
+        return null;
+      }
 
+      const now = Date.now();
       // If session is older than 2 hours, clear it
       if (now - session.timestamp > SESSION_TIMEOUT) {
         localStorage.removeItem(SESSION_KEY);
         return null;
       }
 
-      return session.user;
+      return session.user as VerifiedUser;
     } catch (e) {
+      localStorage.removeItem(SESSION_KEY);
       return null;
     }
   });
 
-  const isAuthorized = verifiedUser !== null;
+  const isAuthorized = !!verifiedUser;
 
   const authorize = (user: VerifiedUser) => {
     const session: AuthSession = {

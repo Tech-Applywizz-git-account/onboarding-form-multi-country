@@ -90,7 +90,14 @@ const OnboardingPage: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { verifiedUser, resumeFile, setResumeFile } = useAuth();
-  const verified = verifiedUser ?? { applywizz_id: "AWL-XXXX", email: "user@example.com", phone: "NA" };
+  const verified = verifiedUser;
+
+  // Safety redirect if someone bypasses ProtectedRoute (shouldn't happen)
+  useEffect(() => {
+    if (!verified) {
+      navigate("/", { replace: true });
+    }
+  }, [verified, navigate]);
 
   // Local State
   const [step, setStep] = useState(1);
@@ -102,6 +109,8 @@ const OnboardingPage: React.FC = () => {
   const [addressValue, setAddressValue] = useState("");
   const [isSubmitDialogOpen, setIsSubmitDialogOpen] = useState(false);
   const [isParsing, setIsParsing] = useState(false);
+  
+  if (!verified) return null; // Prevent rendering with null data
 
   // Job Roles API State
   const [jobRolesData, setJobRolesData] = useState<any[]>([]);

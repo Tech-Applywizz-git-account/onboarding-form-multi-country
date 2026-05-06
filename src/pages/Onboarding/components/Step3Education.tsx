@@ -132,10 +132,10 @@ const EmploymentHistoryRow: React.FC<EmploymentHistoryRowProps> = ({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Job Title with Suggestions */}
-        <FormField 
-          id={`employment_history.${index}.job_title` as any} 
-          label="Job Title" 
-          required 
+        <FormField
+          id={`employment_history.${index}.job_title` as any}
+          label="Job Title"
+          required
           error={(errors.employment_history as any)?.[index]?.job_title}
         >
           <Popover open={jobOpen} onOpenChange={setJobOpen}>
@@ -181,10 +181,10 @@ const EmploymentHistoryRow: React.FC<EmploymentHistoryRowProps> = ({
         </FormField>
 
         {/* Company Name with Search & Add */}
-        <FormField 
-          id={`employment_history.${index}.company_name` as any} 
-          label="Company Name" 
-          required 
+        <FormField
+          id={`employment_history.${index}.company_name` as any}
+          label="Company Name"
+          required
           error={(errors.employment_history as any)?.[index]?.company_name}
         >
           <Popover open={compOpen} onOpenChange={setCompOpen}>
@@ -241,16 +241,16 @@ const EmploymentHistoryRow: React.FC<EmploymentHistoryRowProps> = ({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <FormField 
-          id={`employment_history.${index}.start_date` as any} 
-          label="Start Date" 
-          required 
+        <FormField
+          id={`employment_history.${index}.start_date` as any}
+          label="Start Date"
+          required
           error={(errors.employment_history as any)?.[index]?.start_date}
         >
           <Input type="date" {...register(`employment_history.${index}.start_date` as any)} className="h-11 border-slate-200 bg-white" />
         </FormField>
-        <FormField 
-          id={`employment_history.${index}.end_date` as any} 
+        <FormField
+          id={`employment_history.${index}.end_date` as any}
           label="End Date"
           required={!watch(`employment_history.${index}.is_current` as any)}
           error={(errors.employment_history as any)?.[index]?.end_date}
@@ -516,10 +516,10 @@ export const Step3Education: React.FC<Step3Props> = ({
           {alternateRolesOptions.length > 0 ? (
             <div className="space-y-2">
               <MultiSelect
-                label={`Alternate Job Roles (Auto-selected)`}
+                label={`Alternate Job Roles Based On Preferred Selected Job Roles`}
                 options={alternateRolesOptions.map(role => ({ value: role, label: role }))}
                 selected={alternateRolesOptions}
-                onSelectionChange={() => {}} // Disabled
+                onSelectionChange={() => { }} // Disabled
                 disabled={true}
               />
             </div>
@@ -537,7 +537,11 @@ export const Step3Education: React.FC<Step3Props> = ({
         </FormField>
 
         <div className="grid grid-cols-2 gap-4">
-          <FormField id="salary_expectations_yearly" label={`${displayCountryName || "Yearly"} Salary Expectation`} error={undefined}>
+          <FormField
+            id="salary_expectations_yearly"
+            label={`Salary Expectation (yearly)`}
+            error={undefined}
+          >
             <Select
               value={(watch("salary_expectations") || "").split(",").find(s => s.startsWith("Yearly:"))?.replace("Yearly:", "") || ""}
               onValueChange={(v) => {
@@ -556,21 +560,34 @@ export const Step3Education: React.FC<Step3Props> = ({
             </Select>
           </FormField>
 
-          <FormField id="salary_expectations_hourly" label={`${displayCountryName || "Hourly"} Rate Expectation`} error={undefined}>
+          <FormField
+            id="salary_expectations_hourly"
+            label={`Salary Expectation (hourly)`}
+            error={undefined}
+          >
             <Select
-              value={(watch("salary_expectations") || "").split(",").find(s => s.startsWith("Hourly:"))?.replace("Hourly:", "") || ""}
+              value={(watch("salary_expectations") || "").split(",").find(s => {
+                const type = COUNTRY_DATA[selectedCountry as string]?.salary_types[1] || "Hourly";
+                return s.startsWith(`${type}:`);
+              })?.split(":")[1] || ""}
               onValueChange={(v) => {
-                const current = (watch("salary_expectations") || "").split(",").filter(Boolean).filter(s => !s.startsWith("Hourly:"));
-                setValue("salary_expectations", v ? [...current, `Hourly:${v}`].join(",") : current.join(","), { shouldValidate: true });
+                const type = COUNTRY_DATA[selectedCountry as string]?.salary_types[1] || "Hourly";
+                const current = (watch("salary_expectations") || "").split(",").filter(Boolean).filter(s => !s.startsWith(`${type}:`));
+                setValue("salary_expectations", v ? [...current, `${type}:${v}`].join(",") : current.join(","), { shouldValidate: true });
               }}
             >
               <SelectTrigger className="h-11 border-slate-200">
-                <SelectValue placeholder="Select Hourly Rate" />
+                <SelectValue placeholder={`Select ${COUNTRY_DATA[selectedCountry as string]?.salary_types[1] || "Hourly"} Rate`} />
               </SelectTrigger>
               <SelectContent>
-                {(SALARY_RANGES[selectedCountry as string]?.Hourly || SALARY_RANGES["United States"].Hourly || []).map(r => (
-                  <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
-                ))}
+                {(() => {
+                  const country = selectedCountry as string;
+                  const type = COUNTRY_DATA[country]?.salary_types[1] || "Hourly";
+                  const options = SALARY_RANGES[country]?.[type] || SALARY_RANGES["United States"].Hourly || [];
+                  return options.map(r => (
+                    <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                  ));
+                })()}
               </SelectContent>
             </Select>
           </FormField>
@@ -690,12 +707,21 @@ export const Step3Education: React.FC<Step3Props> = ({
               <CommandGroup className="max-h-60 overflow-auto">
                 {compSuggestions.map(comp => (
                   <CommandItem key={comp} onSelect={() => {
-                    const current = watch("exclude_companies") || [];
+                    const current = (watch("exclude_companies") || []).filter(Boolean);
+                    let next: string[];
+
                     if (current.includes(comp)) {
-                      setValue("exclude_companies", current.filter(c => c !== comp));
+                      // Remove company
+                      next = current.filter(c => c !== comp);
                     } else {
-                      setValue("exclude_companies", [...current, comp]);
+                      // Add company: remove NA if it exists
+                      next = current.filter(c => c !== "NA");
+                      next.push(comp);
                     }
+
+                    // If empty, restore NA
+                    if (next.length === 0) next = ["NA"];
+                    setValue("exclude_companies", next, { shouldValidate: true });
                   }}>
                     <Check className={cn("mr-2 h-4 w-4", (watch("exclude_companies") || []).includes(comp) ? "opacity-100" : "opacity-0")} />
                     {comp}
@@ -703,9 +729,15 @@ export const Step3Education: React.FC<Step3Props> = ({
                 ))}
                 <CommandItem onSelect={() => {
                   const val = prompt("Enter company name to exclude:");
-                  if (val) {
-                    const current = watch("exclude_companies") || [];
-                    setValue("exclude_companies", [...current, val]);
+                  if (val && val.trim()) {
+                    const current = (watch("exclude_companies") || []).filter(Boolean);
+                    // Remove NA if it exists
+                    let next = current.filter(c => c !== "NA");
+                    if (!next.includes(val.trim())) {
+                      next.push(val.trim());
+                    }
+                    if (next.length === 0) next = ["NA"];
+                    setValue("exclude_companies", next, { shouldValidate: true });
                   }
                 }}>
                   <Plus className="mr-2 h-4 w-4" />
@@ -734,43 +766,43 @@ export const Step3Education: React.FC<Step3Props> = ({
         </FormField>
 
         <div className="space-y-6 animate-in fade-in slide-in-from-top-2 duration-300">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-              <div className="flex items-center gap-2">
-                <Briefcase className="h-5 w-5 text-blue-600" />
-                <h3 className="text-lg font-bold text-slate-800">Employment History</h3>
-              </div>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="text-blue-600 border-blue-200 bg-blue-50 hover:bg-blue-100"
-                onClick={() => append({ job_title: "", company_name: "", start_date: "", is_current: false })}
-              >
-                <Plus className="h-4 w-4 mr-1" /> Add Job
-              </Button>
+          <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+            <div className="flex items-center gap-2">
+              <Briefcase className="h-5 w-5 text-blue-600" />
+              <h3 className="text-lg font-bold text-slate-800">Employment History</h3>
             </div>
-            {fields.map((field, index) => (
-              <EmploymentHistoryRow
-                key={field.id}
-                index={index}
-                register={register}
-                watch={watch}
-                setValue={setValue}
-                remove={remove}
-                selectedCountry={selectedCountry}
-                jobRoleOptions={jobRoleOptions}
-                jobRolesData={jobRolesData}
-                alternateRolesOptions={alternateRolesOptions}
-                errors={errors}
-              />
-            ))}
-
-            {fields.length === 0 && (
-              <div className="text-center p-8 border-2 border-dashed border-slate-200 rounded-xl text-slate-500">
-                Click "Add Job" to enter your work experience.
-              </div>
-            )}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="text-blue-600 border-blue-200 bg-blue-50 hover:bg-blue-100"
+              onClick={() => append({ job_title: "", company_name: "", start_date: "", is_current: false })}
+            >
+              <Plus className="h-4 w-4 mr-1" /> Add Job
+            </Button>
           </div>
+          {fields.map((field, index) => (
+            <EmploymentHistoryRow
+              key={field.id}
+              index={index}
+              register={register}
+              watch={watch}
+              setValue={setValue}
+              remove={remove}
+              selectedCountry={selectedCountry}
+              jobRoleOptions={jobRoleOptions}
+              jobRolesData={jobRolesData}
+              alternateRolesOptions={alternateRolesOptions}
+              errors={errors}
+            />
+          ))}
+
+          {fields.length === 0 && (
+            <div className="text-center p-8 border-2 border-dashed border-slate-200 rounded-xl text-slate-500">
+              Click "Add Job" to enter your work experience.
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
