@@ -1,4 +1,6 @@
 // src/pages/Onboarding/helpers.ts
+import { WORLD_COUNTRIES } from "./worldCountries";
+import { COUNTRY_OPTIONS } from "./constants";
 
 export const ensureAllowedDoc = (file: File | null) => {
   if (!file) throw new Error("Resume required");
@@ -30,10 +32,10 @@ export const fetchAddressSuggestions = async (query: string, countryCode?: strin
   if (!query || query.length < 3) return [];
 
   try {
-    const codes = countryCode ? countryCode.toLowerCase() : "us,ca,gb,ie";
+    const codes = countryCode ? countryCode.toLowerCase() : "";
     const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
       query
-    )}&format=json&addressdetails=1&limit=5&countrycodes=${codes}`;
+    )}&format=json&addressdetails=1&limit=5${codes ? `&countrycodes=${codes}` : ""}`;
 
     const response = await fetch(url, {
       headers: {
@@ -54,12 +56,11 @@ export const fetchAddressSuggestions = async (query: string, countryCode?: strin
   }
 };
 
-// Country name → ISO 2-letter code mapping for OpenAlex API filter
+// Dynamic Country name → ISO 2-letter code mapping
 const COUNTRY_TO_ISO: Record<string, string> = {
-  "United States": "US",
-  "United Kingdom": "GB",
-  "Canada": "CA",
-  "Ireland": "IE",
+  ...WORLD_COUNTRIES.reduce((acc, c) => ({ ...acc, [c.name]: c.code }), {}),
+  // Add common aliases or labels from COUNTRY_OPTIONS if they differ
+  ...COUNTRY_OPTIONS.reduce((acc, c) => ({ ...acc, [c.value]: c.code }), {}),
 };
 
 export const fetchUniversities = async (query: string, country?: string): Promise<string[]> => {
@@ -110,18 +111,38 @@ export const fetchUniversities = async (query: string, country?: string): Promis
   return localResults;
 };
 
-export const fetchCities = async (query: string, country?: string) => {
+export const fetchCities = async (query: string, country?: string): Promise<string[]> => {
   if (!query || query.length < 1) return [];
+  
   try {
     const { searchStatesLocally } = await import("./statesData");
-    return searchStatesLocally(query, country);
+    const local = searchStatesLocally(query, country);
+    
+    // If we have a specific country and local data is empty, try Nominatim API for cities
+    if (local.length === 0 && country) {
+      const isoCode = COUNTRY_TO_ISO[country]?.toLowerCase();
+      const url = `https://nominatim.openstreetmap.org/search?city=${encodeURIComponent(query)}&format=json&limit=10${isoCode ? `&countrycodes=${isoCode}` : ""}`;
+      
+      const response = await fetch(url, {
+        headers: { "User-Agent": "ApplyWizz-Onboarding-Form/1.0" }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        // Extract city names or display names
+        const apiResults: string[] = data.map((item: any) => (item.name || item.display_name.split(",")[0]) as string).filter(Boolean);
+        return Array.from(new Set<string>(apiResults)).slice(0, 15);
+      }
+    }
+    
+    return local;
   } catch (error) {
     console.error("Error fetching states:", error);
     return [];
   }
 };
 
-export const fetchCompanies = async (query: string) => {
+export const fetchCompanies = async (query: string): Promise<string[]> => {
   if (!query || query.length < 1) return [];
   try {
     const url = `https://autocomplete.clearbit.com/v1/companies/suggest?query=${encodeURIComponent(query)}`;

@@ -25,7 +25,11 @@ export const Step2Eligibility: React.FC<Step2Props> = ({
   register,
   errors,
 }) => {
-  const selectedCountry = watch("zip_or_country") || "the United States";
+  const selectedCountry = watch("zip_or_country");
+  const otherCountry = watch("other_country");
+  const displayCountryName = selectedCountry === "Other"
+    ? (otherCountry && otherCountry.trim() ? otherCountry.trim() : "the selected country")
+    : (selectedCountry || "the country");
   const visatype = watch("visatype");
 
   return (
@@ -39,21 +43,21 @@ export const Step2Eligibility: React.FC<Step2Props> = ({
       />
       <YesNoField 
         id="eligible_to_work_in_us" 
-        label={`Are you eligible to work in ${selectedCountry}?`} 
+        label={`Are you eligible to work in ${displayCountryName}?`} 
         required
         watch={watch} 
         setValue={setValue} 
       />
       <YesNoField 
         id="authorized_without_visa" 
-        label={`Are you legally authorized to work in ${selectedCountry} without a visa or sponsorship?`} 
+        label={`Are you legally authorized to work in ${displayCountryName} without a visa or sponsorship?`} 
         required
         watch={watch} 
         setValue={setValue} 
       />
       <YesNoField 
         id="require_future_sponsorship" 
-        label={`Will you now or in the future require sponsorship for employment in ${selectedCountry}?`} 
+        label={`Will you now or in the future require sponsorship for employment in ${displayCountryName}?`} 
         required
         watch={watch} 
         setValue={setValue} 

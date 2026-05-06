@@ -26,6 +26,12 @@ const FileDropzone: React.FC<FileDropzoneProps> = ({
   const [selectedFile, setSelectedFile] = useState<File | null>(initialFile || null);
   const [uploadError, setUploadError] = useState<string>('');
 
+  // Sync internal state with external updates
+  React.useEffect(() => {
+    setSelectedFile(initialFile || null);
+    if (!initialFile) setUploadError('');
+  }, [initialFile]);
+
   const onDrop = useCallback((acceptedFiles: File[], rejectedFiles: any[]) => {
     setUploadError('');
 

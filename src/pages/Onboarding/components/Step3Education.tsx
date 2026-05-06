@@ -15,7 +15,7 @@ import { Label } from "@/components/ui/label";
 import MultiSelect from "@/components/MultiSelect";
 import { FormField } from "./FormField";
 import { YesNoField } from "./YesNoField";
-import { jobRoleOptions, COUNTRY_DATA, SALARY_RANGES } from "../constants";
+import { jobRoleOptions, COUNTRY_DATA, SALARY_RANGES, COUNTRY_OPTIONS } from "../constants";
 import { fetchUniversities, fetchCompanies, fetchCities } from "../helpers";
 import {
   Check,
@@ -56,9 +56,10 @@ const YEAR_OPTIONS = Array.from({ length: 61 }, (_, i) => (new Date().getFullYea
 
 const NOTICE_PERIOD_OPTIONS = [
   "Immediately",
-  "2 weeks",
-  "1 month",
+  "2 Weeks",
+  "1 Month",
   "2 Months",
+  "3 Months"
 
 ];
 
@@ -68,7 +69,7 @@ interface EmploymentHistoryRowProps {
   watch: any;
   setValue: any;
   remove: (index: number) => void;
-  selectedCountry: string;
+  selectedCountry: string | undefined;
   jobRoleOptions: any[];
   jobRolesData: any[];
   alternateRolesOptions: string[];
@@ -287,6 +288,11 @@ export const Step3Education: React.FC<Step3Props> = ({
   toast,
 }) => {
   const selectedCountry = watch("zip_or_country");
+  const otherCountry = watch("other_country");
+  const countryLabel = selectedCountry === "Other"
+    ? (otherCountry && otherCountry.trim() ? otherCountry.trim() : "")
+    : (COUNTRY_OPTIONS.find(c => c.value === selectedCountry)?.label || selectedCountry || "");
+  const displayCountryName = countryLabel || "";
   const jobRoles = Array.isArray(watch("job_role_preferences")) ? watch("job_role_preferences") : [];
   const locations = Array.isArray(watch("location_preferences")) ? watch("location_preferences") : [];
   const workPrefs = Array.isArray(watch("work_preferences")) ? watch("work_preferences") : [];
@@ -390,7 +396,7 @@ export const Step3Education: React.FC<Step3Props> = ({
           </Select>
         </FormField>
 
-        <FormField id="university_name" label={`University Name (${selectedCountry})`} required error={errors.university_name}>
+        <FormField id="university_name" label={`University Name (${displayCountryName || "Selected Country"})`} required error={errors.university_name}>
           <Popover open={uniOpen} onOpenChange={setUniOpen}>
             <PopoverTrigger asChild>
               <Button
@@ -510,19 +516,11 @@ export const Step3Education: React.FC<Step3Props> = ({
           {alternateRolesOptions.length > 0 ? (
             <div className="space-y-2">
               <MultiSelect
-                label={`Alternate Job Roles based on selected job role ${alternateRolesOptions.length > 0 ? "*" : ""}`}
+                label={`Alternate Job Roles (Auto-selected)`}
                 options={alternateRolesOptions.map(role => ({ value: role, label: role }))}
-                selected={watch("alternate_job_roles") ? watch("alternate_job_roles")!.split(",").filter(Boolean) : []}
-                onSelectionChange={(arr) => {
-                  if (arr.length > 3) {
-                    return toast({
-                      title: "Limit",
-                      description: "You can select up to 3 alternate job roles.",
-                      variant: "destructive",
-                    });
-                  }
-                  setValue("alternate_job_roles", arr.join(",") || "", { shouldValidate: true });
-                }}
+                selected={alternateRolesOptions}
+                onSelectionChange={() => {}} // Disabled
+                disabled={true}
               />
             </div>
           ) : (
@@ -534,12 +532,12 @@ export const Step3Education: React.FC<Step3Props> = ({
         </div>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <FormField id="desired_start_date" label="Desired joining date if you got selected in any company" required error={errors.desired_start_date}>
+        <FormField id="desired_start_date" label={`Desired joining date if you got selected in any ${displayCountryName || "Country"} company`} required error={errors.desired_start_date}>
           <Input type="date" {...register("desired_start_date")} className="h-11 border-slate-200 focus:border-blue-500 focus:ring-0" />
         </FormField>
 
         <div className="grid grid-cols-2 gap-4">
-          <FormField id="salary_expectations_yearly" label="Yearly Salary Expectation" error={undefined}>
+          <FormField id="salary_expectations_yearly" label={`${displayCountryName || "Yearly"} Salary Expectation`} error={undefined}>
             <Select
               value={(watch("salary_expectations") || "").split(",").find(s => s.startsWith("Yearly:"))?.replace("Yearly:", "") || ""}
               onValueChange={(v) => {
@@ -551,14 +549,14 @@ export const Step3Education: React.FC<Step3Props> = ({
                 <SelectValue placeholder="Select Yearly Range" />
               </SelectTrigger>
               <SelectContent>
-                {(SALARY_RANGES[selectedCountry]?.Yearly || SALARY_RANGES["United States"].Yearly).map(r => (
+                {(SALARY_RANGES[selectedCountry as string]?.Yearly || SALARY_RANGES["United States"].Yearly).map(r => (
                   <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </FormField>
 
-          <FormField id="salary_expectations_hourly" label="Hourly Rate Expectation" error={undefined}>
+          <FormField id="salary_expectations_hourly" label={`${displayCountryName || "Hourly"} Rate Expectation`} error={undefined}>
             <Select
               value={(watch("salary_expectations") || "").split(",").find(s => s.startsWith("Hourly:"))?.replace("Hourly:", "") || ""}
               onValueChange={(v) => {
@@ -570,7 +568,7 @@ export const Step3Education: React.FC<Step3Props> = ({
                 <SelectValue placeholder="Select Hourly Rate" />
               </SelectTrigger>
               <SelectContent>
-                {(SALARY_RANGES[selectedCountry]?.Hourly || SALARY_RANGES["United States"].Hourly || []).map(r => (
+                {(SALARY_RANGES[selectedCountry as string]?.Hourly || SALARY_RANGES["United States"].Hourly || []).map(r => (
                   <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
                 ))}
               </SelectContent>

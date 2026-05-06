@@ -235,6 +235,7 @@ import { Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext'; // Import useAuth
@@ -363,7 +364,7 @@ const Landing: React.FC = () => {
         email: normalizedData.email,
         phone: normalizedData.phone,
       }); // Set the user as authorized and persist their info
-      navigate('/onboarding', {
+      navigate('/resume-upload', {
         replace: true,
       });
     } catch (err: any) {
@@ -418,13 +419,26 @@ const Landing: React.FC = () => {
 
             <div>
               <Label htmlFor="phone">Phone number used at subscribing <span className='text-red-700'>*</span></Label>
-              <Input
-                id="phone"
-                placeholder="+1 6xxxx xxxxx"
-                {...register('phone')}
-                required
-                className="mt-2 border-slate-300 focus:border-primary focus:ring-2 focus:ring-ring"
-              />
+              <div className="flex gap-2 mt-2">
+                <Select defaultValue="+1">
+                  <SelectTrigger className="w-[120px] border-slate-300 focus:ring-2 focus:ring-ring bg-white">
+                    <SelectValue placeholder="Code" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="+1">+1 (US/CA)</SelectItem>
+                    <SelectItem value="+44">+44 (UK)</SelectItem>
+                    <SelectItem value="+353">+353 (IE)</SelectItem>
+                    <SelectItem value="+91">+91 (IN)</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Input
+                  id="phone"
+                  placeholder="6xxxx xxxxx"
+                  {...register('phone')}
+                  required
+                  className="flex-1 border-slate-300 focus:border-primary focus:ring-2 focus:ring-ring"
+                />
+              </div>
               {errors.phone && <p className="text-sm text-destructive mt-1">{errors.phone.message}</p>}
             </div>
 

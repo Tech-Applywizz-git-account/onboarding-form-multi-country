@@ -5,6 +5,8 @@ export const COUNTRY_OPTIONS = [
   { label: "UK", value: "United Kingdom", code: "GB", phoneCode: "+44" },
   { label: "Ireland", value: "Ireland", code: "IE", phoneCode: "+353" },
   { label: "Canada", value: "Canada", code: "CA", phoneCode: "+1" },
+  { label: "India", value: "India", code: "IN", phoneCode: "+91" },
+  { label: "Other", value: "Other", code: "OTHER", phoneCode: "" },
 ];
 
 export const PHONE_CODES = [
@@ -17,7 +19,7 @@ export const PHONE_CODES = [
 export const COUNTRY_DATA: Record<string, { 
   visa_types: string[]; 
   salary_types: string[]; 
-  currency: string;
+  currency: string; 
   currency_symbol: string;
   date_format: string;
 }> = {
@@ -47,6 +49,13 @@ export const COUNTRY_DATA: Record<string, {
     salary_types: ["Yearly", "Hourly"],
     currency: "CAD",
     currency_symbol: "$",
+    date_format: "DD/MM/YYYY",
+  },
+  "India": {
+    visa_types: ["Citizen", "OCI Card Holder", "Work Permit", "Other"],
+    salary_types: ["Yearly", "Monthly"],
+    currency: "INR",
+    currency_symbol: "₹",
     date_format: "DD/MM/YYYY",
   },
 };

@@ -21,6 +21,7 @@ import {
   USA_STATES,
   GENDER_OPTIONS
 } from "../constants";
+import { COUNTRY_OPTIONS } from "../constants";
 
 interface Step5Props {
   register: UseFormRegister<FormVals>;
@@ -36,6 +37,11 @@ export const Step5Demographics: React.FC<Step5Props> = ({
   setValue,
 }) => {
   const selectedCountry = watch("zip_or_country");
+  const otherCountry = watch("other_country");
+  const countryLabel = selectedCountry === "Other"
+    ? (otherCountry && otherCountry.trim() ? otherCountry.trim() : "")
+    : (COUNTRY_OPTIONS.find(c => c.value === selectedCountry)?.label || selectedCountry || "");
+  const displayCountryName = countryLabel || "";
   const isUS = selectedCountry === "United States";
   const isCanada = selectedCountry === "Canada";
   const isUK = selectedCountry === "United Kingdom";
@@ -83,7 +89,7 @@ export const Step5Demographics: React.FC<Step5Props> = ({
           </div>
 
           <div className="space-y-2">
-            <FormField id="pronouns" label="Pronoun" error={errors.pronouns}>
+            <FormField id="pronouns" label="Pronoun" required error={errors.pronouns}>
               <Select
                 value={watch("pronouns") || ""}
                 onValueChange={(v) => setValue("pronouns", v, { shouldValidate: true })}
@@ -106,7 +112,7 @@ export const Step5Demographics: React.FC<Step5Props> = ({
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <FormField id="sexual_orientation" label="Sexual Orientation" error={errors.sexual_orientation}>
+          <FormField id="sexual_orientation" label="Sexual Orientation" required error={errors.sexual_orientation}>
             <Select
               value={watch("sexual_orientation") || ""}
               onValueChange={(v) => setValue("sexual_orientation", v, { shouldValidate: true })}
@@ -137,7 +143,7 @@ export const Step5Demographics: React.FC<Step5Props> = ({
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
-            <FormField id="current_country_timezone" label="What country and time zone are you based in?" required error={errors.current_country_timezone}>
+            <FormField id="current_country_timezone" label={`Which ${displayCountryName || "Country"} time zone are you based in?`} required error={errors.current_country_timezone}>
               <Select
                 value={watch("current_country_timezone") || ""}
                 onValueChange={(v) => setValue("current_country_timezone", v, { shouldValidate: true })}
@@ -169,7 +175,7 @@ export const Step5Demographics: React.FC<Step5Props> = ({
             <div className="space-y-2">
               <FormField 
                 id="province_territory" 
-                label={isCanada ? "Province Or Territory" : "State"} 
+                label={isCanada ? "Province Or Territory" : (isUS ? "State" : `${displayCountryName || "Region"}`)} 
                 required={isCanada} 
                 error={errors.province_territory}
               >
@@ -195,7 +201,7 @@ export const Step5Demographics: React.FC<Step5Props> = ({
           )}
           
           <div className="space-y-2">
-            <FormField id="county" label="County" required={isUK} error={errors.county}>
+            <FormField id="county" label={`${displayCountryName || "County"}`} required={isUK} error={errors.county}>
               {countyOptions.length > 0 ? (
                 <Select
                   value={watch("county") || ""}
@@ -221,7 +227,7 @@ export const Step5Demographics: React.FC<Step5Props> = ({
           </div>
 
           <div className="space-y-2">
-            <FormField id="religion" label="Religion" error={errors.religion}>
+            <FormField id="religion" label="Religion" required error={errors.religion}>
               <Select
                 value={watch("religion") || ""}
                 onValueChange={(v) => setValue("religion", v, { shouldValidate: true })}
@@ -260,7 +266,7 @@ export const Step5Demographics: React.FC<Step5Props> = ({
           </h3>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <FormField id="is_hispanic_latino" label="Are you Hispanic/Latino?" error={errors.is_hispanic_latino}>
+            <FormField id="is_hispanic_latino" label="Are you Hispanic/Latino?" required error={errors.is_hispanic_latino}>
               <Select
                 value={watch("is_hispanic_latino") || ""}
                 onValueChange={(v) => setValue("is_hispanic_latino", v, { shouldValidate: true })}
@@ -277,7 +283,7 @@ export const Step5Demographics: React.FC<Step5Props> = ({
             </FormField>
 
             <div className="space-y-2">
-              <FormField id="race_ethnicity" label="Race/Ethnicity" error={errors.race_ethnicity}>
+              <FormField id="race_ethnicity" label="Race/Ethnicity" required={isUS} error={errors.race_ethnicity}>
                 <Select
                   value={watch("race_ethnicity") || ""}
                   onValueChange={(v) => setValue("race_ethnicity", v, { shouldValidate: true })}
@@ -307,7 +313,7 @@ export const Step5Demographics: React.FC<Step5Props> = ({
             </div>
           </div>
 
-          <FormField id="veteran_status" label="Veteran Status" error={errors.veteran_status}>
+          <FormField id="veteran_status" label="Veteran Status" required={isUS} error={errors.veteran_status}>
             <Select
               value={watch("veteran_status") || ""}
               onValueChange={(v) => setValue("veteran_status", v, { shouldValidate: true })}

@@ -8,11 +8,12 @@ export const schema = z.object({
   middle_name: z.string().optional(),
   last_name: z.string().min(1, "Required"),
   personal_email: z.string().email("Invalid email"),
-  primary_phone: z.string().regex(/^\+[0-9]+$/, "Format: +[numbers] (no spaces or dashes)"),
+  primary_phone: z.string().regex(/^\+[0-9]+$/, "Please enter a valid phone number"),
   callable_phone: z.string().optional(),
-  whatsapp_number: z.string().regex(/^\+[0-9]+$/, "Format: +[numbers] (no spaces or dashes)"),
+  whatsapp_number: z.string().regex(/^\+[0-9]+$/, "Please enter a valid phone number"),
   full_address: z.string().min(1, "Required"),
   zip_or_country: z.string().min(1, "Required"),
+  other_country: z.string().optional(),
   visatype: z.string().min(1, "Required"),
   visatype_other: z.string().optional(),
   linkedin_url: z.string().optional(),
@@ -101,6 +102,17 @@ export const schema = z.object({
   // Form status
   form_status: z.string().optional(),
 }).superRefine((data, ctx) => {
+  // Conditional Validation for Other Country
+  if (data.zip_or_country === "Other") {
+    if (!data.other_country || data.other_country.trim() === "") {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Please specify your country",
+        path: ["other_country"],
+      });
+    }
+  }
+
   // Conditional Validation for Employment History
   if (data.work_preferences?.includes("Remote")) {
     if (!data.location_preferences || data.location_preferences.length === 0) {
@@ -241,6 +253,36 @@ export const schema = z.object({
   }
   if (data.race_ethnicity === "Other" && (!data.race_ethnicity_other || data.race_ethnicity_other.trim() === "")) {
     ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Required", path: ["race_ethnicity_other"] });
+  }
+
+  // Step 5 Mandatory when Visible
+  if (!data.pronouns || data.pronouns.trim() === "") {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Required", path: ["pronouns"] });
+  }
+  if (!data.sexual_orientation || data.sexual_orientation.trim() === "") {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Required", path: ["sexual_orientation"] });
+  }
+  if (!data.religion || data.religion.trim() === "") {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Required", path: ["religion"] });
+  }
+
+  const isCanada = data.zip_or_country === "Canada";
+  const isUK = data.zip_or_country === "United Kingdom";
+  const isIreland = data.zip_or_country === "Ireland";
+  const isUS = data.zip_or_country === "United States" || data.zip_or_country === "USA";
+  
+  const showEEO = isUS || (!isCanada && !isUK && !isIreland);
+
+  if (showEEO) {
+    if (!data.is_hispanic_latino || data.is_hispanic_latino.trim() === "") {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Required", path: ["is_hispanic_latino"] });
+    }
+    if (isUS && (!data.race_ethnicity || data.race_ethnicity.trim() === "")) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Required", path: ["race_ethnicity"] });
+    }
+    if (isUS && (!data.veteran_status || data.veteran_status.trim() === "")) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Required", path: ["veteran_status"] });
+    }
   }
 });
 

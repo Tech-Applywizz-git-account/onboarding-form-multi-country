@@ -22,13 +22,10 @@ import {
   CommandInput,
   CommandItem,
 } from "@/components/ui/command";
-import { Calendar } from "@/components/ui/calendar";
-import { Textarea } from "@/components/ui/textarea";
-import { Check, ChevronsUpDown, Loader2, CalendarIcon, Globe } from "lucide-react";
+import { Check, ChevronsUpDown, Loader2, Globe } from "lucide-react";
 import FileDropzone from "@/components/FileDropzone";
 import { FormField } from "./FormField";
 import { fetchAddressSuggestions, AddressSuggestion } from "../helpers";
-import { format, parse } from "date-fns";
 import { cn } from "@/lib/utils";
 
 interface Step1Props {
@@ -44,9 +41,11 @@ interface Step1Props {
   setCoverLetterFile: (file: any) => void;
   resumeFile: any;
   coverLetterFile: any;
+  isParsing?: boolean;
 }
 
 import { COUNTRY_OPTIONS, PHONE_CODES, COUNTRY_DATA } from "../constants";
+import { WORLD_COUNTRIES } from "../worldCountries";
 
 export const Step1Personal = ({
   register,
@@ -61,11 +60,26 @@ export const Step1Personal = ({
   setCoverLetterFile,
   resumeFile,
   coverLetterFile,
+  isParsing
 }: Step1Props) => {
   const selectedCountry = watch("zip_or_country");
   const dobValue = watch("date_of_birth");
   const fullAddress = watch("full_address");
+  const otherCountry = watch("other_country");
   const visatype = watch("visatype");
+  const currentVisaOptions = Array.from(new Set([
+    ...(selectedCountry ? (COUNTRY_DATA[selectedCountry]?.visa_types || []) : []),
+    "Other"
+  ]));
+
+  const isUS = selectedCountry === "USA" || selectedCountry === "United States";
+
+  // When 'Other' is selected, use whatever the user has typed in the 'Specify Country' field.
+  // Never fall back to showing the literal word "Other" in labels.
+  const countryLabel = selectedCountry === "Other"
+    ? (otherCountry && otherCountry.trim() ? otherCountry.trim() : "")
+    : (COUNTRY_OPTIONS.find(c => c.value === selectedCountry)?.label || selectedCountry || "");
+  const displayCountryName = countryLabel || "";
 
   // Local state for phone parts
   const [primaryPhoneCode, setPrimaryPhoneCode] = useState("+1");
@@ -81,11 +95,20 @@ export const Step1Personal = ({
   useEffect(() => {
     const fullPhone = watch("primary_phone") || "";
     if (fullPhone && !primaryPhoneNumber) {
-      // Basic splitting logic (assume code is +X or +XX or +XXX)
-      const match = fullPhone.match(/^(\+\d+)(\d+)$/);
-      if (match) {
-        setPrimaryPhoneCode(match[1]);
-        setPrimaryPhoneNumber(match[2]);
+      // Try to match against known prefixes first
+      const sortedCodes = [...PHONE_CODES].sort((a, b) => b.value.length - a.value.length);
+      const codeMatch = sortedCodes.find(pc => fullPhone.startsWith(pc.value));
+      
+      if (codeMatch) {
+        setPrimaryPhoneCode(codeMatch.value);
+        setPrimaryPhoneNumber(fullPhone.slice(codeMatch.value.length));
+      } else {
+        // Fallback to regex if no known code matches
+        const match = fullPhone.match(/^(\+\d{1,4})(\d+)$/);
+        if (match) {
+          setPrimaryPhoneCode(match[1]);
+          setPrimaryPhoneNumber(match[2]);
+        }
       }
     }
   }, [watch("primary_phone")]);
@@ -93,10 +116,18 @@ export const Step1Personal = ({
   useEffect(() => {
     const fullPhone = watch("whatsapp_number") || "";
     if (fullPhone && !whatsappPhoneNumber) {
-      const match = fullPhone.match(/^(\+\d+)(\d+)$/);
-      if (match) {
-        setWhatsappPhoneCode(match[1]);
-        setWhatsappPhoneNumber(match[2]);
+      const sortedCodes = [...PHONE_CODES].sort((a, b) => b.value.length - a.value.length);
+      const codeMatch = sortedCodes.find(pc => fullPhone.startsWith(pc.value));
+      
+      if (codeMatch) {
+        setWhatsappPhoneCode(codeMatch.value);
+        setWhatsappPhoneNumber(fullPhone.slice(codeMatch.value.length));
+      } else {
+        const match = fullPhone.match(/^(\+\d{1,4})(\d+)$/);
+        if (match) {
+          setWhatsappPhoneCode(match[1]);
+          setWhatsappPhoneNumber(match[2]);
+        }
       }
     }
   }, [watch("whatsapp_number")]);
@@ -156,7 +187,14 @@ export const Step1Personal = ({
     setter(cleaned);
   };
 
-  const currentVisaOptions = selectedCountry ? COUNTRY_DATA[selectedCountry]?.visa_types || [] : [];
+  const dynamicPhoneCodes = [...PHONE_CODES];
+  if (selectedCountry === "Other") {
+    const otherC = watch("other_country");
+    const cObj = WORLD_COUNTRIES.find(c => c.name === otherC);
+    if (cObj && !dynamicPhoneCodes.find(p => p.value === cObj.dial_code)) {
+      dynamicPhoneCodes.push({ label: `${cObj.dial_code} (${cObj.name})`, value: cObj.dial_code });
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -190,24 +228,51 @@ export const Step1Personal = ({
             placeholder="Last Name"
           />
         </FormField>
-        <FormField id="zip_or_country" label="Country" required error={errors.zip_or_country}>
-          <Select
-            value={selectedCountry || ""}
-            onValueChange={(v) => setValue("zip_or_country", v, { shouldValidate: true })}
-          >
-            <SelectTrigger className="h-11 border-slate-200 focus:border-blue-500 focus:ring-0">
-              <div className="flex items-center gap-2">
-                <Globe className="h-4 w-4 text-blue-500" />
-                <SelectValue placeholder="Select Country" />
-              </div>
-            </SelectTrigger>
-            <SelectContent>
-              {COUNTRY_OPTIONS.map((c) => (
-                <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </FormField>
+        <div className={`grid gap-6 ${selectedCountry === "Other" ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1"}`}>
+          <FormField id="zip_or_country" label="Country" required error={errors.zip_or_country}>
+            <Select
+              value={selectedCountry || ""}
+              onValueChange={(v) => setValue("zip_or_country", v, { shouldValidate: true })}
+            >
+              <SelectTrigger className="h-11 border-slate-200 focus:border-blue-500 focus:ring-0">
+                <div className="flex items-center gap-2">
+                  <Globe className="h-4 w-4 text-blue-500" />
+                  <SelectValue placeholder="Select Country" />
+                </div>
+              </SelectTrigger>
+              <SelectContent>
+                {COUNTRY_OPTIONS.map((c) => (
+                  <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FormField>
+          {/* Render Other Country Dropdown if 'Other' is selected */}
+          {selectedCountry === "Other" && (
+            <FormField id="other_country" label="Specify Country" required error={errors.other_country}>
+              <Select
+                value={watch("other_country") || ""}
+                onValueChange={(v) => {
+                  setValue("other_country", v, { shouldValidate: true });
+                  const c = WORLD_COUNTRIES.find(wc => wc.name === v);
+                  if (c) {
+                    setPrimaryPhoneCode(c.dial_code);
+                    setWhatsappPhoneCode(c.dial_code);
+                  }
+                }}
+              >
+                <SelectTrigger className="h-11 border-slate-200 focus:border-blue-500 focus:ring-0">
+                  <SelectValue placeholder="Select your country" />
+                </SelectTrigger>
+                <SelectContent>
+                  {WORLD_COUNTRIES.map((c) => (
+                    <SelectItem key={c.code} value={c.name}>{c.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </FormField>
+          )}
+        </div>
       </div>
 
       {/* Row 3: Email Address | Date of Birth */}
@@ -223,46 +288,16 @@ export const Step1Personal = ({
         </FormField>
         <FormField 
           id="date_of_birth" 
-          label={`Date of Birth (${selectedCountry === "United States" ? "MM-DD-YYYY" : "DD-MM-YYYY"})`} 
+          label={`Date of Birth (${selectedCountry === "United States" || selectedCountry === "USA" ? "MM-DD-YYYY" : "DD-MM-YYYY"})`}
           required 
           error={errors.date_of_birth}
         >
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className={cn(
-                  "h-11 w-full justify-start text-left font-normal border-slate-200",
-                  !dobValue && "text-muted-foreground"
-                )}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {dobValue ? format(new Date(dobValue), selectedCountry === "United States" ? "MM-dd-yyyy" : "dd-MM-yyyy") : <span>Pick a date</span>}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                mode="single"
-                selected={dobValue ? new Date(dobValue) : undefined}
-                onSelect={(date) => {
-                  if (date) {
-                    setValue("date_of_birth", format(date, "yyyy-MM-dd"), { shouldValidate: true });
-                  }
-                }}
-                disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
-                initialFocus
-                captionLayout="dropdown-buttons"
-                fromYear={1940}
-                toYear={new Date().getFullYear()}
-                classNames={{
-                  caption_label: "hidden",
-                  dropdown_month: "flex",
-                  dropdown_year: "flex",
-                  dropdown: "bg-white border-none shadow-none focus:ring-0",
-                }}
-              />
-            </PopoverContent>
-          </Popover>
+          <Input
+            id="date_of_birth"
+            type="date"
+            {...register("date_of_birth")}
+            className="h-11 border-slate-200 focus:border-blue-500 focus:ring-0"
+          />
         </FormField>
       </div>
 
@@ -272,11 +307,11 @@ export const Step1Personal = ({
           <div className="flex gap-0 h-11">
             <Select value={primaryPhoneCode} onValueChange={setPrimaryPhoneCode}>
               <SelectTrigger className="w-[100px] border-slate-200 border-r-0 rounded-r-none bg-slate-50 focus:ring-0">
-                <SelectValue />
+                <SelectValue>{primaryPhoneCode}</SelectValue>
               </SelectTrigger>
               <SelectContent>
-                {PHONE_CODES.map(pc => (
-                  <SelectItem key={pc.value} value={pc.value}>{pc.value}</SelectItem>
+                {dynamicPhoneCodes.map(pc => (
+                  <SelectItem key={pc.value} value={pc.value}>{pc.label}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -292,11 +327,11 @@ export const Step1Personal = ({
           <div className="flex gap-0 h-11">
             <Select value={whatsappPhoneCode} onValueChange={setWhatsappPhoneCode}>
               <SelectTrigger className="w-[100px] border-slate-200 border-r-0 rounded-r-none bg-slate-50 focus:ring-0">
-                <SelectValue />
+                <SelectValue>{whatsappPhoneCode}</SelectValue>
               </SelectTrigger>
               <SelectContent>
-                {PHONE_CODES.map(pc => (
-                  <SelectItem key={pc.value} value={pc.value}>{pc.value}</SelectItem>
+                {dynamicPhoneCodes.map(pc => (
+                  <SelectItem key={pc.value} value={pc.value}>{pc.label}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -312,7 +347,7 @@ export const Step1Personal = ({
 
       {/* Row 5: Full Address | Current Visa Type */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <FormField id="full_address" label="Full Address" required error={errors.full_address}>
+        <FormField id="full_address" label={`${displayCountryName || "Current"} Address`} required error={errors.full_address}>
           <Popover open={addressOpen} onOpenChange={setAddressOpen}>
             <PopoverTrigger asChild>
               <Button
@@ -366,7 +401,7 @@ export const Step1Personal = ({
           </Popover>
         </FormField>
 
-        <FormField id="visatype" label="Current Visa Type" required error={errors.visatype}>
+        <FormField id="visatype" label={`Current ${displayCountryName || "Country"} Visa Type`} required error={errors.visatype}>
           <Select
             value={visatype || ""}
             disabled={!selectedCountry}
@@ -379,7 +414,6 @@ export const Step1Personal = ({
               {currentVisaOptions.map((opt) => (
                 <SelectItem key={opt} value={opt}>{opt}</SelectItem>
               ))}
-              <SelectItem value="Other">Other</SelectItem>
             </SelectContent>
           </Select>
           {visatype === "Other" && (
@@ -432,12 +466,20 @@ export const Step1Personal = ({
 
       {/* Row 8: File Uploads */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <FileDropzone
-          label="Resume/CV *"
-          onFileSelect={setResumeFile}
-          initialFile={resumeFile}
-          error={errors.resume_dummy?.message}
-        />
+        <div className="relative">
+          <FileDropzone
+            label="Resume/CV *"
+            onFileSelect={setResumeFile}
+            initialFile={resumeFile}
+            error={errors.resume_dummy?.message}
+          />
+          {isParsing && (
+            <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px] flex flex-col items-center justify-center rounded-xl z-10 animate-in fade-in duration-300">
+              <Loader2 className="h-8 w-8 text-blue-600 animate-spin mb-2" />
+              <p className="text-xs font-semibold text-blue-700">AI is parsing your resume...</p>
+            </div>
+          )}
+        </div>
         <FileDropzone
           label="Cover Letter (Optional)"
           onFileSelect={setCoverLetterFile}

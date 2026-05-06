@@ -44,8 +44,10 @@ export interface VerifiedUser {
 interface AuthContextType {
   isAuthorized: boolean;
   verifiedUser: VerifiedUser | null;
+  resumeFile: File | null;
   authorize: (user: VerifiedUser) => void;
   logout: () => void;
+  setResumeFile: (file: File | null) => void;
 }
 
 const SESSION_KEY = 'onboarding_auth';
@@ -61,14 +63,13 @@ export const useAuth = () => {
 };
 
 export const AuthProvider: React.FC<React.PropsWithChildren<{}>> = ({ children }) => {
+  const [resumeFile, setResumeFile] = useState<File | null>(null);
   // Initialise from localStorage so reloads preserve the session
   const [verifiedUser, setVerifiedUser] = useState<VerifiedUser | null>(() => {
     try {
       const stored = localStorage.getItem(SESSION_KEY);
-      console.log('AuthProvider Init - stored session:', stored);
       return stored ? (JSON.parse(stored) as VerifiedUser) : null;
     } catch (e) {
-      console.error('AuthProvider Init Error:', e);
       return null;
     }
   });
@@ -76,19 +77,18 @@ export const AuthProvider: React.FC<React.PropsWithChildren<{}>> = ({ children }
   const isAuthorized = verifiedUser !== null;
 
   const authorize = (user: VerifiedUser) => {
-    console.log('AuthProvider: Authorizing user:', user);
     localStorage.setItem(SESSION_KEY, JSON.stringify(user));
     setVerifiedUser(user);
   };
 
   const logout = () => {
-    console.log('AuthProvider: Logging out');
     localStorage.removeItem(SESSION_KEY);
     setVerifiedUser(null);
+    setResumeFile(null);
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthorized, verifiedUser, authorize, logout }}>
+    <AuthContext.Provider value={{ isAuthorized, verifiedUser, resumeFile, authorize, logout, setResumeFile }}>
       {children}
     </AuthContext.Provider>
   );

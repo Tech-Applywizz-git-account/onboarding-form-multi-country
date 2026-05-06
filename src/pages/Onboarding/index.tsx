@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { useForm, SubmitHandler } from "react-hook-form";
+import { useForm, SubmitHandler, useFieldArray, Control } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
@@ -27,6 +27,7 @@ import { Step3Education } from "./components/Step3Education";
 import { Step4Background } from "./components/Step4Background";
 import { Step5Demographics } from "./components/Step5Demographics";
 import { Step6Review } from "./components/Step6Review";
+import { ParsedResumeData } from "./resumeParser";
 
 const FIELD_LABELS: Record<string, string> = {
   first_name: "First Name",
@@ -88,12 +89,11 @@ const FIELD_LABELS: Record<string, string> = {
 const OnboardingPage: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { verifiedUser } = useAuth();
+  const { verifiedUser, resumeFile, setResumeFile } = useAuth();
   const verified = verifiedUser ?? { applywizz_id: "AWL-XXXX", email: "user@example.com", phone: "NA" };
 
   // Local State
   const [step, setStep] = useState(1);
-  const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [coverLetterFile, setCoverLetterFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showChancesDialog, setShowChancesDialog] = useState(false);
@@ -101,6 +101,7 @@ const OnboardingPage: React.FC = () => {
   const [addressOpen, setAddressOpen] = useState(false);
   const [addressValue, setAddressValue] = useState("");
   const [isSubmitDialogOpen, setIsSubmitDialogOpen] = useState(false);
+  const [isParsing, setIsParsing] = useState(false);
 
   // Job Roles API State
   const [jobRolesData, setJobRolesData] = useState<any[]>([]);
@@ -210,6 +211,11 @@ const OnboardingPage: React.FC = () => {
     control,
   } = form;
 
+  const { replace: replaceEmployment } = useFieldArray({
+    control,
+    name: "employment_history",
+  });
+
   const jobRoles = watch("job_role_preferences") || [];
 
   // Fetch Job Roles
@@ -264,30 +270,126 @@ const OnboardingPage: React.FC = () => {
   // Sync Resume Dummy Field for Validation
   useEffect(() => {
     setValue("resume_dummy", resumeFile ? "yes" : "");
+    if (resumeFile) {
+      localStorage.setItem("last_uploaded_resume_name", resumeFile.name);
+    }
   }, [resumeFile, setValue]);
+
+  const primaryPhone = watch("primary_phone");
+  
+  // Automatic Country Selection based on Phone Prefix
+  useEffect(() => {
+    if (!primaryPhone) return;
+
+    const phonePrefixToCountry: Record<string, string> = {
+      "+1": "United States",
+      "+44": "United Kingdom",
+      "+353": "Ireland",
+      "+91": "India",
+    };
+
+    // Find the longest matching prefix
+    const matchingPrefix = Object.keys(phonePrefixToCountry)
+      .sort((a, b) => b.length - a.length)
+      .find(prefix => primaryPhone.startsWith(prefix));
+
+    if (matchingPrefix) {
+      const country = phonePrefixToCountry[matchingPrefix];
+      // Only set if not already set or if it's currently empty to avoid overwriting user manual choice
+      const currentCountry = watch("zip_or_country");
+      if (!currentCountry) {
+        setValue("zip_or_country", country, { shouldValidate: true });
+      }
+    }
+  }, [primaryPhone, setValue, watch]);
+
+  // Check for Parsed Resume Data in localStorage on mount
+  useEffect(() => {
+    const rawData = localStorage.getItem("resume_parsed_data");
+    if (rawData) {
+      try {
+        const parsedData: ParsedResumeData = JSON.parse(rawData);
+        
+        // Map fields to form
+        const fieldsToFill: (keyof FormVals)[] = [
+          "first_name", "middle_name", "last_name", "personal_email", 
+          "primary_phone", "full_address", "linkedin_url", "github_url", 
+          "portfolio_url", "date_of_birth", "highest_education", 
+          "university_name", "main_subject", "graduation_year", "cgpa",
+          "experience", "employment_status", "employment_history",
+          "job_role_preferences", "gender"
+        ];
+
+        fieldsToFill.forEach(field => {
+          let val = (parsedData as any)[field];
+
+          // 1. Normalize Highest Education (straight vs curly apostrophe)
+          if (field === "highest_education" && typeof val === "string") {
+            // Match the specific curly apostrophes used in Select options
+            val = val.replace(/'/g, "’");
+          }
+
+          // 2. Normalize Employment History Dates (YYYY-MM -> YYYY-MM-DD)
+          if (field === "employment_history" && Array.isArray(val)) {
+            const normalizedHistory = val.map(job => ({
+              ...job,
+              start_date: (job.start_date && job.start_date.length === 7) ? `${job.start_date}-01` : job.start_date,
+              end_date: (job.end_date && job.end_date.length === 7) ? `${job.end_date}-01` : job.end_date,
+            }));
+            replaceEmployment(normalizedHistory);
+            return;
+          }
+
+          // 3. Normalize Date of Birth (YYYY-MM-DD -> Regional Format)
+          if (field === "date_of_birth" && typeof val === "string" && val.includes("-") && val.length === 10) {
+            const dateParts = val.split("-");
+            if (dateParts[0].length === 4) { // YYYY-MM-DD format from AI
+              const [y, m, d] = dateParts;
+              const currentCountry = watch("zip_or_country");
+              const isUS = currentCountry === "United States" || currentCountry === "USA";
+              val = isUS ? `${m}-${d}-${y}` : `${d}-${m}-${y}`;
+            }
+          }
+
+          if (val !== undefined && val !== null && val !== "") {
+            if (Array.isArray(val) && val.length === 0) return;
+            setValue(field as any, val, { shouldValidate: true });
+          }
+        });
+
+        toast({
+          title: "Profile Auto-filled",
+          description: "We've applied the data from your resume. Please review each step.",
+        });
+      } catch (e) {
+        console.error("Failed to parse localStorage resume data", e);
+      }
+    }
+  }, [setValue, toast]);
 
   // Handle Job Role Auto-mapping and Reset Alternates
   useEffect(() => {
     const currentJobRole = jobRoles && jobRoles.length > 0 ? jobRoles[0] : "";
     if (currentJobRole) {
-      // If the primary job role changed, reset alternate roles
-      if (lastJobRoleRef.current && lastJobRoleRef.current !== currentJobRole) {
-        setValue("alternate_job_roles", "", { shouldValidate: true });
-      }
       lastJobRoleRef.current = currentJobRole;
-
       setValue("role", currentJobRole, { shouldValidate: true });
+      
       const selectedRole = jobRolesData.find(role => role.name === currentJobRole);
       if (selectedRole && selectedRole.alternateRoles && selectedRole.alternateRoles.length > 0) {
         setAlternateRolesOptions(selectedRole.alternateRoles);
         setValue("has_alternates_available", true, { shouldValidate: true });
+        
+        // Auto-select ALL alternate roles as requested
+        setValue("alternate_job_roles", selectedRole.alternateRoles.join(","), { shouldValidate: true });
       } else {
         setAlternateRolesOptions([]);
         setValue("has_alternates_available", false, { shouldValidate: true });
+        setValue("alternate_job_roles", "", { shouldValidate: true });
       }
     } else {
       setAlternateRolesOptions([]);
       setValue("has_alternates_available", false, { shouldValidate: true });
+      setValue("alternate_job_roles", "", { shouldValidate: true });
     }
   }, [jobRoles, jobRolesData, setValue]);
 
@@ -302,6 +404,10 @@ const OnboardingPage: React.FC = () => {
   };
 
   const prevStep = () => {
+    if (step === 1) {
+      navigate("/resume-upload");
+      return;
+    }
     setStep((s) => Math.max(1, s - 1));
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -379,11 +485,11 @@ const OnboardingPage: React.FC = () => {
         callable_phone: data.callable_phone || null,
         whatsapp_number: data.whatsapp_number || null,
         full_address: data.full_address,
-        zip_or_country: data.zip_or_country,
+        zip_or_country: data.zip_or_country === "Other" ? `Other - ${data.other_country}` : data.zip_or_country,
         linkedin_url: data.linkedin_url || null,
         github_url: data.github_url || null,
         portfolio_url: data.portfolio_url || null,
-        job_role_preferences: (data.job_role_preferences || []).map(role => role === "Other" && data.job_role_other ? data.job_role_other : role).slice(0, 4),
+        job_role_preferences: (data.job_role_preferences || []).map(role => role === "Other" && data.job_role_other ? `Other - ${data.job_role_other}` : role),
         job_role_other: data.job_role_other || null,
         location_preferences: data.location_preferences,
         salary_range: data.salary_expectations,
@@ -416,7 +522,7 @@ const OnboardingPage: React.FC = () => {
         worked_for_company_before: ynToBool(data.worked_for_company_before),
         discharged_for_policy_violation: ynToBool(data.discharged_for_policy_violation),
         referred_by_agency: ynToBool(data.referred_by_agency),
-        highest_education: data.highest_education,
+        highest_education: data.highest_education === "Other" ? "Other - See Education History" : data.highest_education,
         university_name: data.university_name,
         cumulative_gpa: data.cgpa,
         desired_start_date: data.desired_start_date ? new Date(data.desired_start_date) : null,
@@ -448,6 +554,9 @@ const OnboardingPage: React.FC = () => {
         religion: data.religion === "Other" ? `Other - ${data.religion_other}` : data.religion || null,
         sexual_orientation: data.sexual_orientation || null,
         pronouns: data.pronouns === "Other" ? `Other - ${data.pronouns_other}` : data.pronouns || null,
+        salary_period: data.salary_period || null,
+        has_alternates_available: data.has_alternates_available || false,
+        employment_history: data.employment_history || [],
         form_filled_link: window.location.href,
         form_status: window.location.href.includes('apply-wizz.me') ? 'CORRECT' : 'DIFFERENT',
       };
@@ -473,6 +582,9 @@ const OnboardingPage: React.FC = () => {
         if (insertError) throw insertError;
         toast({ title: "Onboarding completed successfully!" });
       }
+
+      // Clear parsed data on success
+      localStorage.removeItem("resume_parsed_data");
 
       navigate("/success", { replace: true });
     } catch (e: any) {
@@ -554,7 +666,7 @@ const OnboardingPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 p-4 md:p-8">
-      <div className="max-w-4xl mx-auto space-y-8">
+      <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in duration-500">
         {/* Chances Dialog */}
         <Dialog open={showChancesDialog} onOpenChange={setShowChancesDialog}>
           <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
@@ -639,6 +751,7 @@ const OnboardingPage: React.FC = () => {
                 setCoverLetterFile={setCoverLetterFile}
                 resumeFile={resumeFile}
                 coverLetterFile={coverLetterFile}
+                isParsing={isParsing}
               />
             )}
             {step === 2 && <Step2Eligibility watch={watch} setValue={setValue} register={register} errors={errors} />}
@@ -662,11 +775,9 @@ const OnboardingPage: React.FC = () => {
 
           {/* Navigation Bar */}
           <div className="bg-slate-50 p-6 border-t border-slate-100 flex justify-between items-center">
-            {step > 1 ? (
-              <Button type="button" variant="ghost" onClick={prevStep} className="text-slate-600 hover:bg-slate-200">
-                Back
-              </Button>
-            ) : <div />}
+            <Button type="button" variant="ghost" onClick={prevStep} className="text-slate-600 hover:bg-slate-200">
+              Back
+            </Button>
 
             {step < 6 ? (
               <Button
