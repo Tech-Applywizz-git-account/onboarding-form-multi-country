@@ -226,7 +226,7 @@
 
 
 // src/pages/Landing.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -252,7 +252,14 @@ const Landing: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { authorize } = useAuth(); // Use the authorize function
+  const { authorize, isAuthorized } = useAuth(); // Use the authorize function
+
+  // Auto-redirect if already authorized
+  useEffect(() => {
+    if (isAuthorized) {
+      navigate('/resume-upload', { replace: true });
+    }
+  }, [isAuthorized, navigate]);
 
   const {
     register,

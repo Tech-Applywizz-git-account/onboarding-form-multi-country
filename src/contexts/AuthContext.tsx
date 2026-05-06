@@ -51,6 +51,12 @@ interface AuthContextType {
 }
 
 const SESSION_KEY = 'onboarding_auth';
+const SESSION_TIMEOUT = 2 * 60 * 60 * 1000; // 2 hours in milliseconds
+
+interface AuthSession {
+  user: VerifiedUser;
+  timestamp: number;
+}
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -64,11 +70,23 @@ export const useAuth = () => {
 
 export const AuthProvider: React.FC<React.PropsWithChildren<{}>> = ({ children }) => {
   const [resumeFile, setResumeFile] = useState<File | null>(null);
-  // Initialise from localStorage so reloads preserve the session
+  
+  // Initialise from localStorage with a 2-hour expiry check
   const [verifiedUser, setVerifiedUser] = useState<VerifiedUser | null>(() => {
     try {
       const stored = localStorage.getItem(SESSION_KEY);
-      return stored ? (JSON.parse(stored) as VerifiedUser) : null;
+      if (!stored) return null;
+
+      const session = JSON.parse(stored) as AuthSession;
+      const now = Date.now();
+
+      // If session is older than 2 hours, clear it
+      if (now - session.timestamp > SESSION_TIMEOUT) {
+        localStorage.removeItem(SESSION_KEY);
+        return null;
+      }
+
+      return session.user;
     } catch (e) {
       return null;
     }
@@ -77,7 +95,11 @@ export const AuthProvider: React.FC<React.PropsWithChildren<{}>> = ({ children }
   const isAuthorized = verifiedUser !== null;
 
   const authorize = (user: VerifiedUser) => {
-    localStorage.setItem(SESSION_KEY, JSON.stringify(user));
+    const session: AuthSession = {
+      user,
+      timestamp: Date.now(),
+    };
+    localStorage.setItem(SESSION_KEY, JSON.stringify(session));
     setVerifiedUser(user);
   };
 
