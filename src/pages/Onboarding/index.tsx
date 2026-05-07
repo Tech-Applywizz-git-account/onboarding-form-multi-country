@@ -109,7 +109,7 @@ const OnboardingPage: React.FC = () => {
   const [addressValue, setAddressValue] = useState("");
   const [isSubmitDialogOpen, setIsSubmitDialogOpen] = useState(false);
   const [isParsing, setIsParsing] = useState(false);
-  
+
   if (!verified) return null; // Prevent rendering with null data
 
   // Job Roles API State
@@ -285,7 +285,7 @@ const OnboardingPage: React.FC = () => {
   }, [resumeFile, setValue]);
 
   const primaryPhone = watch("primary_phone");
-  
+
   // Automatic Country Selection based on Phone Prefix
   useEffect(() => {
     if (!primaryPhone) return;
@@ -318,12 +318,12 @@ const OnboardingPage: React.FC = () => {
     if (rawData) {
       try {
         const parsedData: ParsedResumeData = JSON.parse(rawData);
-        
+
         // Map fields to form
         const fieldsToFill: (keyof FormVals)[] = [
-          "first_name", "middle_name", "last_name", "personal_email", 
-          "primary_phone", "full_address", "linkedin_url", "github_url", 
-          "portfolio_url", "date_of_birth", "highest_education", 
+          "first_name", "middle_name", "last_name", "personal_email",
+          "primary_phone", "full_address", "linkedin_url", "github_url",
+          "portfolio_url", "date_of_birth", "highest_education",
           "university_name", "main_subject", "graduation_year", "cgpa",
           "experience", "employment_status", "employment_history",
           "job_role_preferences", "gender"
@@ -382,12 +382,12 @@ const OnboardingPage: React.FC = () => {
     if (currentJobRole) {
       lastJobRoleRef.current = currentJobRole;
       setValue("role", currentJobRole, { shouldValidate: true });
-      
+
       const selectedRole = jobRolesData.find(role => role.name === currentJobRole);
       if (selectedRole && selectedRole.alternateRoles && selectedRole.alternateRoles.length > 0) {
         setAlternateRolesOptions(selectedRole.alternateRoles);
         setValue("has_alternates_available", true, { shouldValidate: true });
-        
+
         // Auto-select ALL alternate roles as requested
         setValue("alternate_job_roles", selectedRole.alternateRoles.join(","), { shouldValidate: true });
       } else {
@@ -424,7 +424,7 @@ const OnboardingPage: React.FC = () => {
   const nextStep = async () => {
     const fieldsToValidate = stepFieldMap[step];
     const ok = await trigger(fieldsToValidate as any, { shouldFocus: true });
-    
+
     if (!ok) {
       // Get missing field labels
       const missingFields = fieldsToValidate
@@ -433,8 +433,8 @@ const OnboardingPage: React.FC = () => {
 
       toast({
         title: "Incomplete Step",
-        description: missingFields.length > 0 
-          ? `Please complete: ${missingFields.join(", ")}` 
+        description: missingFields.length > 0
+          ? `Please complete: ${missingFields.join(", ")}`
           : "Please check the required fields highlighted in red.",
         variant: "destructive",
       });
@@ -734,13 +734,13 @@ const OnboardingPage: React.FC = () => {
               </div>
             </div>
           </div>
-          <Button
+          {/* <Button
             variant="outline"
             onClick={handlePrefill}
             className="w-full md:w-auto border-blue-200 text-blue-700 hover:bg-blue-50 hover:border-blue-300 shadow-sm transition-all text-xs"
           >
             Prefill for Testing
-          </Button>
+          </Button> */}
         </div>
 
         {/* Form Section */}
