@@ -299,7 +299,7 @@ const Landing: React.FC = () => {
     };
 
     try {
-      console.log('Normalized Data:', normalizedData);
+      // console.log('Normalized Data:', normalizedData);
       // 1) sales_closure match — fetch by lead_id only, then compare email in JS (case-insensitive)
       const { data: sc, error: scErr } = await supabase
         .from('sales_closure')

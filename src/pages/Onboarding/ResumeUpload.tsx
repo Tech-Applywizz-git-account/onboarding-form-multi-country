@@ -45,7 +45,7 @@ const ResumeUpload: React.FC = () => {
       clearInterval(msgInterval);
 
       if (parsedData) {
-        console.log("Extracted Resume Data:", parsedData);
+        // console.log("Extracted Resume Data:", parsedData);
         localStorage.setItem("resume_parsed_data", JSON.stringify(parsedData));
         toast({ title: "Analysis Complete", description: "Redirecting to your form..." });
         setTimeout(() => navigate("/onboarding", { replace: true }), 1000);
