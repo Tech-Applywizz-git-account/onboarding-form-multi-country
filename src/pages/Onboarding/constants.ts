@@ -16,6 +16,21 @@ export const PHONE_CODES = [
   { label: "+91 (India)", value: "+91" },
 ];
 
+export const CURRENCY_OPTIONS = [
+  { label: "USD ($)", value: "USD", symbol: "$" },
+  { label: "GBP (£)", value: "GBP", symbol: "£" },
+  { label: "EUR (€)", value: "EUR", symbol: "€" },
+  { label: "INR (₹)", value: "INR", symbol: "₹" },
+  { label: "CAD (CA$)", value: "CAD", symbol: "CA$" },
+  { label: "AUD (A$)", value: "AUD", symbol: "A$" },
+  { label: "MKD (den)", value: "MKD", symbol: "den" },
+  { label: "AED (د.إ)", value: "AED", symbol: "د.إ" },
+  { label: "SAR (SR)", value: "SAR", symbol: "SR" },
+  { label: "QAR (QR)", value: "QAR", symbol: "QR" },
+  { label: "PKR (Rs)", value: "PKR", symbol: "Rs" },
+  { label: "SGD (S$)", value: "SGD", symbol: "S$" },
+];
+
 export const COUNTRY_DATA: Record<string, { 
   visa_types: string[]; 
   salary_types: string[]; 

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { UseFormRegister, FieldErrors, UseFormWatch, UseFormSetValue } from "react-hook-form";
+import { UseFormRegister, FieldErrors, UseFormWatch, UseFormSetValue, Control, Controller } from "react-hook-form";
 import { FormVals } from "../schema";
+import PhoneInput from 'react-phone-input-2';
+import 'react-phone-input-2/lib/style.css';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -42,6 +44,7 @@ interface Step1Props {
   resumeFile: any;
   coverLetterFile: any;
   isParsing?: boolean;
+  control: Control<FormVals>;
 }
 
 import { COUNTRY_OPTIONS, PHONE_CODES, COUNTRY_DATA } from "../constants";
@@ -60,7 +63,8 @@ export const Step1Personal = ({
   setCoverLetterFile,
   resumeFile,
   coverLetterFile,
-  isParsing
+  isParsing,
+  control
 }: Step1Props) => {
   const selectedCountry = watch("zip_or_country");
   const dobValue = watch("date_of_birth");
@@ -81,79 +85,13 @@ export const Step1Personal = ({
     : (COUNTRY_OPTIONS.find(c => c.value === selectedCountry)?.label || selectedCountry || "");
   const displayCountryName = countryLabel || "";
 
-  // Local state for phone parts
-  const [primaryPhoneCode, setPrimaryPhoneCode] = useState("+1");
-  const [primaryPhoneNumber, setPrimaryPhoneNumber] = useState("");
-  const [whatsappPhoneCode, setWhatsappPhoneCode] = useState("+1");
-  const [whatsappPhoneNumber, setWhatsappPhoneNumber] = useState("");
-
   // Real-time Address States
   const [suggestions, setSuggestions] = useState<AddressSuggestion[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
-  // Sync local phone parts with form value (handles external changes like prefill)
-  useEffect(() => {
-    const fullPhone = watch("primary_phone") || "";
-    if (fullPhone && !primaryPhoneNumber) {
-      // Try to match against known prefixes first
-      const sortedCodes = [...PHONE_CODES].sort((a, b) => b.value.length - a.value.length);
-      const codeMatch = sortedCodes.find(pc => fullPhone.startsWith(pc.value));
-      
-      if (codeMatch) {
-        setPrimaryPhoneCode(codeMatch.value);
-        setPrimaryPhoneNumber(fullPhone.slice(codeMatch.value.length));
-      } else {
-        // Fallback to regex if no known code matches
-        const match = fullPhone.match(/^(\+\d{1,4})(\d+)$/);
-        if (match) {
-          setPrimaryPhoneCode(match[1]);
-          setPrimaryPhoneNumber(match[2]);
-        }
-      }
-    }
-  }, [watch("primary_phone")]);
-
-  useEffect(() => {
-    const fullPhone = watch("whatsapp_number") || "";
-    if (fullPhone && !whatsappPhoneNumber) {
-      const sortedCodes = [...PHONE_CODES].sort((a, b) => b.value.length - a.value.length);
-      const codeMatch = sortedCodes.find(pc => fullPhone.startsWith(pc.value));
-      
-      if (codeMatch) {
-        setWhatsappPhoneCode(codeMatch.value);
-        setWhatsappPhoneNumber(fullPhone.slice(codeMatch.value.length));
-      } else {
-        const match = fullPhone.match(/^(\+\d{1,4})(\d+)$/);
-        if (match) {
-          setWhatsappPhoneCode(match[1]);
-          setWhatsappPhoneNumber(match[2]);
-        }
-      }
-    }
-  }, [watch("whatsapp_number")]);
-
-  // Sync phone parts with form value (handles user input)
-  useEffect(() => {
-    if (primaryPhoneNumber) {
-      setValue("primary_phone", `${primaryPhoneCode}${primaryPhoneNumber}`, { shouldValidate: true });
-    }
-  }, [primaryPhoneCode, primaryPhoneNumber, setValue]);
-
-  useEffect(() => {
-    if (whatsappPhoneNumber) {
-      setValue("whatsapp_number", `${whatsappPhoneCode}${whatsappPhoneNumber}`, { shouldValidate: true });
-    }
-  }, [whatsappPhoneCode, whatsappPhoneNumber, setValue]);
-
-  // Update phone codes and reset visa type when country changes
+  // Update visa type when country changes
   useEffect(() => {
     if (selectedCountry) {
-      const country = COUNTRY_OPTIONS.find(c => c.value === selectedCountry);
-      if (country) {
-        setPrimaryPhoneCode(country.phoneCode);
-        setWhatsappPhoneCode(country.phoneCode);
-      }
-      
       const currentVisa = watch("visatype");
       const validVisas = COUNTRY_DATA[selectedCountry]?.visa_types || [];
       if (currentVisa && !validVisas.includes(currentVisa)) {
@@ -182,19 +120,35 @@ export const Step1Personal = ({
     return () => clearTimeout(timer);
   }, [addressValue, selectedCountry]);
 
-  const handlePhoneInput = (val: string, setter: (v: string) => void) => {
-    const cleaned = val.replace(/[^0-9]/g, "");
-    setter(cleaned);
+  // Determine the default country code for PhoneInput
+  const getSelectedCountryCode = () => {
+    if (selectedCountry === "Other") {
+      const otherC = watch("other_country");
+      const cObj = WORLD_COUNTRIES.find(c => c.name === otherC);
+      return cObj?.code?.toLowerCase() || 'us';
+    }
+    const country = COUNTRY_OPTIONS.find(c => c.value === selectedCountry);
+    return country?.code?.toLowerCase() || 'us';
   };
 
-  const dynamicPhoneCodes = [...PHONE_CODES];
-  if (selectedCountry === "Other") {
-    const otherC = watch("other_country");
-    const cObj = WORLD_COUNTRIES.find(c => c.name === otherC);
-    if (cObj && !dynamicPhoneCodes.find(p => p.value === cObj.dial_code)) {
-      dynamicPhoneCodes.push({ label: `${cObj.dial_code} (${cObj.name})`, value: cObj.dial_code });
-    }
-  }
+  const selectedCountryCode = getSelectedCountryCode();
+
+  const phoneInputStyles = {
+    width: '100%',
+    height: '44px',
+    fontSize: '14px',
+    paddingLeft: '48px',
+    borderRadius: '8px',
+    border: '1px solid #e2e8f0',
+    backgroundColor: 'white'
+  };
+
+  const phoneButtonStyles = {
+    borderRadius: '8px 0 0 8px',
+    border: '1px solid #e2e8f0',
+    backgroundColor: '#f8fafc',
+    padding: '0 4px'
+  };
 
   return (
     <div className="space-y-6">
@@ -304,44 +258,40 @@ export const Step1Personal = ({
       {/* Row 4: Primary Phone | WhatsApp Number */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <FormField id="primary_phone" label="Primary Phone" required error={errors.primary_phone}>
-          <div className="flex gap-0 h-11">
-            <Select value={primaryPhoneCode} onValueChange={setPrimaryPhoneCode}>
-              <SelectTrigger className="w-[100px] border-slate-200 border-r-0 rounded-r-none bg-slate-50 focus:ring-0">
-                <SelectValue>{primaryPhoneCode}</SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                {dynamicPhoneCodes.map(pc => (
-                  <SelectItem key={pc.value} value={pc.value}>{pc.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Input
-              value={primaryPhoneNumber}
-              onChange={(e) => handlePhoneInput(e.target.value, setPrimaryPhoneNumber)}
-              className="flex-1 border-slate-200 rounded-l-none focus:border-blue-500 focus:ring-0"
-              placeholder="Phone number"
-            />
-          </div>
+          <Controller
+            name="primary_phone"
+            control={control}
+            render={({ field: { onChange, value } }) => (
+              <PhoneInput
+                country={selectedCountryCode}
+                value={value}
+                onChange={(phone) => onChange(`+${phone}`)}
+                enableSearch={true}
+                placeholder="Enter primary phone number"
+                inputStyle={phoneInputStyles}
+                buttonStyle={phoneButtonStyles}
+                containerClass="phone-input-container"
+              />
+            )}
+          />
         </FormField>
         <FormField id="whatsapp_number" label="WhatsApp Number" required error={errors.whatsapp_number}>
-          <div className="flex gap-0 h-11">
-            <Select value={whatsappPhoneCode} onValueChange={setWhatsappPhoneCode}>
-              <SelectTrigger className="w-[100px] border-slate-200 border-r-0 rounded-r-none bg-slate-50 focus:ring-0">
-                <SelectValue>{whatsappPhoneCode}</SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                {dynamicPhoneCodes.map(pc => (
-                  <SelectItem key={pc.value} value={pc.value}>{pc.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Input
-              value={whatsappPhoneNumber}
-              onChange={(e) => handlePhoneInput(e.target.value, setWhatsappPhoneNumber)}
-              className="flex-1 border-slate-200 rounded-l-none focus:border-blue-500 focus:ring-0"
-              placeholder="Phone number"
-            />
-          </div>
+          <Controller
+            name="whatsapp_number"
+            control={control}
+            render={({ field: { onChange, value } }) => (
+              <PhoneInput
+                country={selectedCountryCode}
+                value={value}
+                onChange={(phone) => onChange(`+${phone}`)}
+                enableSearch={true}
+                placeholder="Enter WhatsApp number"
+                inputStyle={phoneInputStyles}
+                buttonStyle={phoneButtonStyles}
+                containerClass="phone-input-container"
+              />
+            )}
+          />
         </FormField>
       </div>
 

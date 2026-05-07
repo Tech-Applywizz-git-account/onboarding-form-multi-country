@@ -15,7 +15,7 @@ import { Label } from "@/components/ui/label";
 import MultiSelect from "@/components/MultiSelect";
 import { FormField } from "./FormField";
 import { YesNoField } from "./YesNoField";
-import { jobRoleOptions, COUNTRY_DATA, SALARY_RANGES, COUNTRY_OPTIONS } from "../constants";
+import { jobRoleOptions, COUNTRY_DATA, SALARY_RANGES, COUNTRY_OPTIONS, CURRENCY_OPTIONS } from "../constants";
 import { fetchUniversities, fetchCompanies, fetchCities } from "../helpers";
 import {
   Check,
@@ -299,6 +299,21 @@ export const Step3Education: React.FC<Step3Props> = ({
   const employmentStatus = watch("employment_status");
   const experience = watch("experience");
   const universityName = watch("university_name");
+  const selectedCurrency = watch("salary_currency");
+
+  // Set default currency when country changes
+  useEffect(() => {
+    if (selectedCountry) {
+      const countryData = COUNTRY_DATA[selectedCountry as string];
+      if (countryData) {
+        setValue("salary_currency", countryData.currency, { shouldValidate: true });
+      } else {
+        setValue("salary_currency", "USD", { shouldValidate: true });
+      }
+    }
+  }, [selectedCountry, setValue]);
+
+  const currencySymbol = CURRENCY_OPTIONS.find(c => c.value === selectedCurrency)?.symbol || "$";
 
   const { fields, append, remove } = useFieldArray({
     control,
@@ -536,63 +551,79 @@ export const Step3Education: React.FC<Step3Props> = ({
           <Input type="date" {...register("desired_start_date")} className="h-11 border-slate-200 focus:border-blue-500 focus:ring-0" />
         </FormField>
 
-        <div className="grid grid-cols-2 gap-4">
-          <FormField
-            id="salary_expectations_yearly"
-            label={`Salary Expectation (yearly)`}
-            error={undefined}
+        <FormField id="salary_currency" label="Preferred Currency" required error={errors.salary_currency}>
+          <Select
+            value={selectedCurrency || ""}
+            onValueChange={(v) => setValue("salary_currency", v, { shouldValidate: true })}
           >
-            <Select
-              value={(watch("salary_expectations") || "").split(",").find(s => s.startsWith("Yearly:"))?.replace("Yearly:", "") || ""}
-              onValueChange={(v) => {
-                const current = (watch("salary_expectations") || "").split(",").filter(Boolean).filter(s => !s.startsWith("Yearly:"));
-                setValue("salary_expectations", v ? [...current, `Yearly:${v}`].join(",") : current.join(","), { shouldValidate: true });
-              }}
-            >
-              <SelectTrigger className="h-11 border-slate-200">
-                <SelectValue placeholder="Select Yearly Range" />
-              </SelectTrigger>
-              <SelectContent>
-                {(SALARY_RANGES[selectedCountry as string]?.Yearly || SALARY_RANGES["United States"].Yearly).map(r => (
-                  <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </FormField>
+            <SelectTrigger className="h-11 border-slate-200 focus:border-blue-500 focus:ring-0 bg-white">
+              <SelectValue placeholder="Select Currency" />
+            </SelectTrigger>
+            <SelectContent>
+              {CURRENCY_OPTIONS.map(curr => (
+                <SelectItem key={curr.value} value={curr.value}>{curr.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </FormField>
+      </div>
 
-          <FormField
-            id="salary_expectations_hourly"
-            label={`Salary Expectation (hourly)`}
-            error={undefined}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <FormField
+          id="salary_expectations_yearly"
+          label={`Salary Expectation (yearly)`}
+          error={undefined}
+        >
+          <Select
+            value={(watch("salary_expectations") || "").split(",").find(s => s.startsWith("Yearly:"))?.replace("Yearly:", "") || ""}
+            onValueChange={(v) => {
+              const current = (watch("salary_expectations") || "").split(",").filter(Boolean).filter(s => !s.startsWith("Yearly:"));
+              setValue("salary_expectations", v ? [...current, `Yearly:${v}`].join(",") : current.join(","), { shouldValidate: true });
+            }}
           >
-            <Select
-              value={(watch("salary_expectations") || "").split(",").find(s => {
-                const type = COUNTRY_DATA[selectedCountry as string]?.salary_types[1] || "Hourly";
-                return s.startsWith(`${type}:`);
-              })?.split(":")[1] || ""}
-              onValueChange={(v) => {
-                const type = COUNTRY_DATA[selectedCountry as string]?.salary_types[1] || "Hourly";
-                const current = (watch("salary_expectations") || "").split(",").filter(Boolean).filter(s => !s.startsWith(`${type}:`));
-                setValue("salary_expectations", v ? [...current, `${type}:${v}`].join(",") : current.join(","), { shouldValidate: true });
-              }}
-            >
-              <SelectTrigger className="h-11 border-slate-200">
-                <SelectValue placeholder={`Select ${COUNTRY_DATA[selectedCountry as string]?.salary_types[1] || "Hourly"} Rate`} />
-              </SelectTrigger>
-              <SelectContent>
-                {(() => {
-                  const country = selectedCountry as string;
-                  const type = COUNTRY_DATA[country]?.salary_types[1] || "Hourly";
-                  const options = SALARY_RANGES[country]?.[type] || SALARY_RANGES["United States"].Hourly || [];
-                  return options.map(r => (
-                    <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
-                  ));
-                })()}
-              </SelectContent>
-            </Select>
-          </FormField>
-          {errors.salary_expectations && <p className="col-span-2 text-sm text-destructive">{errors.salary_expectations.message}</p>}
-        </div>
+            <SelectTrigger className="h-11 border-slate-200 focus:border-blue-500 focus:ring-0 bg-white">
+              <SelectValue placeholder={`In ${currencySymbol}`} />
+            </SelectTrigger>
+            <SelectContent>
+              {(SALARY_RANGES[selectedCountry as string]?.Yearly || SALARY_RANGES["United States"].Yearly).map(r => (
+                <SelectItem key={r.value} value={r.value}>{r.label.replace(/[\$£€₹]|CA\$/g, currencySymbol)}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </FormField>
+
+        <FormField
+          id="salary_expectations_hourly"
+          label={`Salary Expectation (${COUNTRY_DATA[selectedCountry as string]?.salary_types[1] || "Hourly"})`}
+          error={undefined}
+        >
+          <Select
+            value={(watch("salary_expectations") || "").split(",").find(s => {
+              const type = COUNTRY_DATA[selectedCountry as string]?.salary_types[1] || "Hourly";
+              return s.startsWith(`${type}:`);
+            })?.split(":")[1] || ""}
+            onValueChange={(v) => {
+              const type = COUNTRY_DATA[selectedCountry as string]?.salary_types[1] || "Hourly";
+              const current = (watch("salary_expectations") || "").split(",").filter(Boolean).filter(s => !s.startsWith(`${type}:`));
+              setValue("salary_expectations", v ? [...current, `${type}:${v}`].join(",") : current.join(","), { shouldValidate: true });
+            }}
+          >
+            <SelectTrigger className="h-11 border-slate-200 focus:border-blue-500 focus:ring-0 bg-white">
+              <SelectValue placeholder={`In ${currencySymbol}`} />
+            </SelectTrigger>
+            <SelectContent>
+              {(() => {
+                const country = selectedCountry as string;
+                const type = COUNTRY_DATA[country]?.salary_types[1] || "Hourly";
+                const options = SALARY_RANGES[country]?.[type] || SALARY_RANGES["United States"].Hourly || [];
+                return options.map(r => (
+                  <SelectItem key={r.value} value={r.value}>{r.label.replace(/[\$£€₹]|CA\$/g, currencySymbol)}</SelectItem>
+                ));
+              })()}
+            </SelectContent>
+          </Select>
+        </FormField>
+        {errors.salary_expectations && <p className="col-span-full text-sm text-destructive -mt-4">{errors.salary_expectations.message}</p>}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

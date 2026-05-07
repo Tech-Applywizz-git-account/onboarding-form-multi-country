@@ -67,7 +67,7 @@ export const Step6Review: React.FC<Step6Props> = ({
         <ReviewItem label="Primary Phone" value={data.primary_phone} />
         <ReviewItem label="WhatsApp Number" value={data.whatsapp_number} />
         <ReviewItem label="Date of Birth" value={data.date_of_birth} />
-        <ReviewItem label="Country" value={data.zip_or_country} />
+        <ReviewItem label="Country" value={data.zip_or_country === "Other" ? data.other_country : data.zip_or_country} />
         <ReviewItem label="Full Address" value={data.full_address} fullWidth />
         <ReviewItem label="Current Visa Type" value={data.visatype === "Other" ? data.visatype_other : data.visatype} />
         <ReviewItem label="LinkedIn URL" value={data.linkedin_url} />
@@ -100,7 +100,7 @@ export const Step6Review: React.FC<Step6Props> = ({
         <ReviewItem label="Employment Status" value={data.employment_status} />
         <ReviewItem label="Notice Period" value={data.notice_period} />
         <ReviewItem label="Desired Start Date" value={data.desired_start_date} />
-        <ReviewItem label="Salary Expectations" value={data.salary_expectations} fullWidth />
+        <ReviewItem label="Salary Expectations" value={`${data.salary_currency} ${data.salary_expectations}`} fullWidth />
         <ReviewItem label="Work Preferences" value={data.work_preferences?.join(", ")} fullWidth />
         <ReviewItem label="Job Role Preferences" value={data.job_role_preferences?.join(", ")} fullWidth />
         <ReviewItem label="Location Preferences" value={data.location_preferences?.join(", ")} fullWidth />

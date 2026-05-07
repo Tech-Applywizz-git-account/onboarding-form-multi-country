@@ -43,6 +43,7 @@ export const schema = z.object({
   willing_to_relocate: yesNo,
   can_work_3_days_in_office: yesNo,
   salary_expectations: z.string().min(1, "Required"),
+  salary_currency: z.string().min(1, "Required"),
   salary_period: z.enum(["Yearly", "Monthly", "Hourly"]),
   role: z.string().min(1, "Required"),
   experience: z.string().min(1, "Required"),

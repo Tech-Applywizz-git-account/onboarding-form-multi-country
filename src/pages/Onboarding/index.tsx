@@ -501,7 +501,7 @@ const OnboardingPage: React.FC = () => {
         job_role_preferences: (data.job_role_preferences || []).map(role => role === "Other" && data.job_role_other ? `Other - ${data.job_role_other}` : role),
         job_role_other: data.job_role_other || null,
         location_preferences: data.location_preferences,
-        salary_range: data.salary_expectations,
+        salary_range: `${data.salary_currency} ${data.salary_expectations}`,
         needs_sponsorship: ynToBool(data.require_future_sponsorship),
         visatypes: visatypeValue,
         work_auth_details: workAuthDetails,
@@ -749,6 +749,7 @@ const OnboardingPage: React.FC = () => {
             {step === 1 && (
               <Step1Personal
                 register={register}
+                control={control}
                 errors={errors}
                 watch={watch}
                 setValue={setValue}

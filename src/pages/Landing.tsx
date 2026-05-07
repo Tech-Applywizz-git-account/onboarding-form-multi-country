@@ -238,7 +238,10 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
-import { useAuth } from '@/contexts/AuthContext'; // Import useAuth
+import { useAuth } from '@/contexts/AuthContext';
+import PhoneInput from 'react-phone-input-2';
+import 'react-phone-input-2/lib/style.css';
+import { Controller } from 'react-hook-form';
 
 const step1Schema = z.object({
   applywizz_id: z.string().min(1, 'Applywizz ID is required'),
@@ -264,13 +267,15 @@ const Landing: React.FC = () => {
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors },
     setError,
     clearErrors,
   } = useForm<FormVals>({
     resolver: zodResolver(step1Schema),
     defaultValues: {
-      applywizz_id: 'AWL-', // Set default value to "AWL-"
+      applywizz_id: 'AWL-',
+      phone: '',
     }
   });
 
@@ -426,24 +431,34 @@ const Landing: React.FC = () => {
 
             <div>
               <Label htmlFor="phone">Phone number used at subscribing <span className='text-red-700'>*</span></Label>
-              <div className="flex gap-2 mt-2">
-                <Select defaultValue="+1">
-                  <SelectTrigger className="w-[120px] border-slate-300 focus:ring-2 focus:ring-ring bg-white">
-                    <SelectValue placeholder="Code" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="+1">+1 (US/CA)</SelectItem>
-                    <SelectItem value="+44">+44 (UK)</SelectItem>
-                    <SelectItem value="+353">+353 (IE)</SelectItem>
-                    <SelectItem value="+91">+91 (IN)</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Input
-                  id="phone"
-                  placeholder="6xxxx xxxxx"
-                  {...register('phone')}
-                  required
-                  className="flex-1 border-slate-300 focus:border-primary focus:ring-2 focus:ring-ring"
+              <div className="mt-2">
+                <Controller
+                  name="phone"
+                  control={control}
+                  render={({ field: { onChange, value } }) => (
+                    <PhoneInput
+                      country={'us'}
+                      value={value}
+                      onChange={onChange}
+                      enableSearch={true}
+                      placeholder="Enter phone number"
+                      inputStyle={{
+                        width: '100%',
+                        height: '44px',
+                        fontSize: '14px',
+                        paddingLeft: '48px',
+                        borderRadius: '8px',
+                        border: '1px solid #cbd5e1',
+                        backgroundColor: 'white'
+                      }}
+                      buttonStyle={{
+                        borderRadius: '8px 0 0 8px',
+                        border: '1px solid #cbd5e1',
+                        backgroundColor: 'white',
+                      }}
+                      containerClass="phone-input-container"
+                    />
+                  )}
                 />
               </div>
               {errors.phone && <p className="text-sm text-destructive mt-1">{errors.phone.message}</p>}
