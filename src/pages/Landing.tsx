@@ -288,7 +288,6 @@ const Landing: React.FC = () => {
     const parserUrl = import.meta.env.VITE_RESUME_PARSER_URL || "http://localhost:8000/parse";
     const baseUrl = parserUrl.replace('/parse', '');
     
-    console.log("Ping: Waking up resume parser server...");
     fetch(baseUrl, { mode: 'no-cors' }).catch(() => {
       // Ignore errors, we just want to trigger the server wakeup
     });

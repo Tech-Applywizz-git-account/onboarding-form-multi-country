@@ -95,10 +95,8 @@ const App: React.FC = () => {
 // ProtectedRoute  component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthorized } = useAuth();
-  console.log('ProtectedRoute check - isAuthorized:', isAuthorized, 'Path:', window.location.pathname);
 
   if (!isAuthorized) {
-    console.log('ProtectedRoute: REDIRECTING TO /');
     // If not authorized, redirect to the landing page
     return <Navigate to="/" replace />;
   }
