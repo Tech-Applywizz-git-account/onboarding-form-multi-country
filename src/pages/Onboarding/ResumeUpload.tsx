@@ -40,8 +40,8 @@ const ResumeUpload: React.FC = () => {
         setParsingMessage(messages[msgIndex]);
       }, 2000);
 
-      const text = await extractTextFromFile(resumeFile);
-      const parsedData = await parseResumeWithAI(text);
+      // const text = await extractTextFromFile(resumeFile);
+      const parsedData = await parseResumeViaRoute(resumeFile);
       clearInterval(msgInterval);
 
       if (parsedData) {
@@ -82,7 +82,7 @@ const ResumeUpload: React.FC = () => {
             <div className="absolute inset-0 bg-white/95 backdrop-blur-md z-50 flex flex-col items-center justify-center p-6 text-center space-y-4">
               <div className="h-16 w-16 rounded-full border-[3px] border-slate-100 border-t-[#1F4096] animate-spin" />
               <div className="space-y-1">
-                <h3 className="text-lg font-bold text-slate-900">AI Analysis in Progress</h3>
+                <h3 className="text-lg font-bold text-slate-900">Resume Analysis in Progress</h3>
                 <p className="text-[#1F4096] text-sm font-medium animate-pulse">{parsingMessage}</p>
               </div>
             </div>
