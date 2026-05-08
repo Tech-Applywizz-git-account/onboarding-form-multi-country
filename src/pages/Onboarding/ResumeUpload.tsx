@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import FileDropzone from "@/components/FileDropzone";
-import { extractTextFromFile, parseResumeWithAI } from "./resumeParser";
+import { extractTextFromFile, parseResumeViaRoute } from "./resumeParser";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
