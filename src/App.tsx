@@ -92,7 +92,7 @@ const App: React.FC = () => {
   );
 };
 
-// ProtectedRoute component
+// ProtectedRoute  component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthorized } = useAuth();
   console.log('ProtectedRoute check - isAuthorized:', isAuthorized, 'Path:', window.location.pathname);
