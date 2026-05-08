@@ -208,11 +208,6 @@ export const Step1Personal = ({
                 value={watch("other_country") || ""}
                 onValueChange={(v) => {
                   setValue("other_country", v, { shouldValidate: true });
-                  const c = WORLD_COUNTRIES.find(wc => wc.name === v);
-                  if (c) {
-                    setPrimaryPhoneCode(c.dial_code);
-                    setWhatsappPhoneCode(c.dial_code);
-                  }
                 }}
               >
                 <SelectTrigger className="h-11 border-slate-200 focus:border-blue-500 focus:ring-0">

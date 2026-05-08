@@ -319,52 +319,129 @@ const OnboardingPage: React.FC = () => {
       try {
         const parsedData: ParsedResumeData = JSON.parse(rawData);
 
-        // Map fields to form
-        const fieldsToFill: (keyof FormVals)[] = [
-          "first_name", "middle_name", "last_name", "personal_email",
-          "primary_phone", "full_address", "linkedin_url", "github_url",
-          "portfolio_url", "date_of_birth", "highest_education",
-          "university_name", "main_subject", "graduation_year", "cgpa",
-          "experience", "employment_status", "employment_history",
-          "job_role_preferences", "gender"
-        ];
+        // 1. Basic Info
+        if (parsedData.first_name) setValue("first_name", parsedData.first_name, { shouldValidate: true });
+        if (parsedData.middle_name) setValue("middle_name", parsedData.middle_name, { shouldValidate: true });
+        if (parsedData.last_name) setValue("last_name", parsedData.last_name, { shouldValidate: true });
+        if (parsedData.personal_email) setValue("personal_email", parsedData.personal_email, { shouldValidate: true });
+        if (parsedData.primary_phone) setValue("primary_phone", parsedData.primary_phone, { shouldValidate: true });
+        if (parsedData.full_address) setValue("full_address", parsedData.full_address, { shouldValidate: true });
+        if (parsedData.linkedin_url) setValue("linkedin_url", parsedData.linkedin_url, { shouldValidate: true });
+        if (parsedData.github_url) setValue("github_url", parsedData.github_url, { shouldValidate: true });
+        if (parsedData.portfolio_url) setValue("portfolio_url", parsedData.portfolio_url, { shouldValidate: true });
 
-        fieldsToFill.forEach(field => {
-          let val = (parsedData as any)[field];
+        // 2. Education History (Map first entry to single fields)
+        if (parsedData.education_history && parsedData.education_history.length > 0) {
+          const edu = parsedData.education_history[0];
+          setValue("university_name", edu.university, { shouldValidate: true });
+          setValue("main_subject", edu.subject, { shouldValidate: true });
+          
+          // Map degree to highest_education options
+          const degree = edu.degree?.toLowerCase() || "";
+          let mappedEdu = "Other";
+          if (degree.includes("bachelor") || degree.includes("b.s") || degree.includes("b.a")) mappedEdu = "Bachelor’s Degree";
+          else if (degree.includes("master") || degree.includes("m.s") || degree.includes("m.a") || degree.includes("mba")) mappedEdu = "Master’s Degree";
+          else if (degree.includes("doctor") || degree.includes("phd") || degree.includes("ph.d")) mappedEdu = "Doctorate / PhD";
+          else if (degree.includes("associate")) mappedEdu = "Associate Degree";
+          else if (degree.includes("high school") || degree.includes("ged")) mappedEdu = "High School Diploma / GED";
+          
+          setValue("highest_education", mappedEdu, { shouldValidate: true });
 
-          // 1. Normalize Highest Education (straight vs curly apostrophe)
-          if (field === "highest_education" && typeof val === "string") {
-            // Match the specific curly apostrophes used in Select options
-            val = val.replace(/'/g, "’");
-          }
-
-          // 2. Normalize Employment History Dates (YYYY-MM -> YYYY-MM-DD)
-          if (field === "employment_history" && Array.isArray(val)) {
-            const normalizedHistory = val.map(job => ({
-              ...job,
-              start_date: (job.start_date && job.start_date.length === 7) ? `${job.start_date}-01` : job.start_date,
-              end_date: (job.end_date && job.end_date.length === 7) ? `${job.end_date}-01` : job.end_date,
-            }));
-            replaceEmployment(normalizedHistory);
-            return;
-          }
-
-          // 3. Normalize Date of Birth (YYYY-MM-DD -> Regional Format)
-          if (field === "date_of_birth" && typeof val === "string" && val.includes("-") && val.length === 10) {
-            const dateParts = val.split("-");
-            if (dateParts[0].length === 4) { // YYYY-MM-DD format from AI
-              const [y, m, d] = dateParts;
-              const currentCountry = watch("zip_or_country");
-              const isUS = currentCountry === "United States" || currentCountry === "USA";
-              val = isUS ? `${m}-${d}-${y}` : `${d}-${m}-${y}`;
+          // Extract graduation year from dates (e.g., "01-08-2022 - 01-05-2024")
+          if (edu.dates) {
+            const yearMatch = edu.dates.match(/(\d{4})$/);
+            if (yearMatch) {
+              setValue("graduation_year", yearMatch[1], { shouldValidate: true });
             }
           }
+        }
 
-          if (val !== undefined && val !== null && val !== "") {
-            if (Array.isArray(val) && val.length === 0) return;
-            setValue(field as any, val, { shouldValidate: true });
+        // 3. Employment History
+        if (parsedData.employment_history && parsedData.employment_history.length > 0) {
+          const normalizedHistory = parsedData.employment_history.map(job => {
+            const dateParts = job.dates?.split(" - ") || [];
+            let start_date = "";
+            let end_date = "";
+            let is_current = false;
+
+            if (dateParts.length > 0) {
+              // Convert "MM-DD-YYYY" or "YYYY-MM" to "YYYY-MM-DD"
+              const normalize = (d: string) => {
+                if (!d) return "";
+                if (d.toLowerCase().includes("present")) return "PRESENT";
+                const parts = d.split("-");
+                if (parts.length === 3) {
+                  // Assume MM-DD-YYYY or DD-MM-YYYY
+                  // Try to determine which is year
+                  if (parts[2].length === 4) return `${parts[2]}-${parts[1]}-${parts[0]}`; // MM-DD-YYYY -> YYYY-DD-MM (rough)
+                  if (parts[0].length === 4) return d; // Already YYYY-MM-DD
+                }
+                return d;
+              };
+
+              start_date = normalize(dateParts[0]);
+              if (dateParts[1]?.toLowerCase().includes("present")) {
+                is_current = true;
+              } else {
+                end_date = normalize(dateParts[1]);
+              }
+            }
+
+            return {
+              job_title: job.job_title,
+              company_name: job.company_name,
+              start_date: start_date === "PRESENT" ? "" : start_date,
+              end_date: end_date,
+              is_current: is_current
+            };
+          });
+          replaceEmployment(normalizedHistory);
+          
+          // Also set experience if possible (count years)
+          let totalMonths = 0;
+          parsedData.employment_history.forEach(job => {
+            const dateParts = job.dates?.split(" - ") || [];
+            if (dateParts.length === 2) {
+              const start = new Date(dateParts[0]);
+              const end = dateParts[1].toLowerCase().includes("present") ? new Date() : new Date(dateParts[1]);
+              if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
+                totalMonths += (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
+              }
+            }
+          });
+          const expYears = Math.max(1, Math.floor(totalMonths / 12));
+          setValue("experience", expYears.toString(), { shouldValidate: true });
+
+          // Also set first role
+          if (normalizedHistory[0]?.job_title) {
+            setValue("role", normalizedHistory[0].job_title, { shouldValidate: true });
           }
-        });
+        }
+
+        // 4. Infer Country from Address
+        if (parsedData.full_address) {
+          const addr = parsedData.full_address.toLowerCase();
+          if (addr.includes("usa") || addr.includes("united states")) setValue("zip_or_country", "United States", { shouldValidate: true });
+          else if (addr.includes("uk") || addr.includes("united kingdom")) setValue("zip_or_country", "United Kingdom", { shouldValidate: true });
+          else if (addr.includes("india")) setValue("zip_or_country", "India", { shouldValidate: true });
+          else if (addr.includes("canada")) setValue("zip_or_country", "Canada", { shouldValidate: true });
+          else if (addr.includes("ireland")) setValue("zip_or_country", "Ireland", { shouldValidate: true });
+        }
+
+        // 5. Certifications & Projects -> Addons
+        let addons = "";
+        if (parsedData.certifications && parsedData.certifications.length > 0) {
+          addons += `Certifications: ${parsedData.certifications.join(", ")}\n`;
+        }
+        if (parsedData.projects_list && parsedData.projects_list.length > 0) {
+          addons += `Projects: ${parsedData.projects_list.map(p => p.title).join(", ")}`;
+        }
+        if (addons) setValue("addons_notes", addons.trim(), { shouldValidate: true });
+
+        // 5. Predicted Role
+        if (parsedData.predicted_job_title) {
+          setValue("job_role_preferences", [parsedData.predicted_job_title], { shouldValidate: true });
+        }
 
         toast({
           title: "Profile Auto-filled",
@@ -374,7 +451,7 @@ const OnboardingPage: React.FC = () => {
         console.error("Failed to parse localStorage resume data", e);
       }
     }
-  }, [setValue, toast]);
+  }, [setValue, toast, replaceEmployment]);
 
   // Handle Job Role Auto-mapping and Reset Alternates
   useEffect(() => {
@@ -541,7 +618,7 @@ const OnboardingPage: React.FC = () => {
         experience: data.experience,
         work_preferences: data.work_preferences,
         alternate_job_roles: data.alternate_job_roles,
-        exclude_companies: data.exclude_companies,
+        exclude_companies: (data.exclude_companies && data.exclude_companies.length === 1 && data.exclude_companies[0] === "NA") ? null : data.exclude_companies,
         convicted_of_felony: ynToBool(data.convicted_of_felony),
         felony_explanation: data.felony_explanation || null,
         pending_investigation: ynToBool(data.pending_investigation),

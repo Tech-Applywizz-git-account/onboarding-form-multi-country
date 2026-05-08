@@ -279,6 +279,20 @@ const Landing: React.FC = () => {
     }
   });
 
+  // --- Render Server Wakeup Logic ---
+  const hasWokenUp = React.useRef(false);
+  const handleWakeup = () => {
+    if (hasWokenUp.current) return;
+    hasWokenUp.current = true;
+    
+    const parserUrl = import.meta.env.VITE_RESUME_PARSER_URL || "http://localhost:8000/parse";
+    const baseUrl = parserUrl.replace('/parse', '');
+    
+    fetch(baseUrl, { mode: 'no-cors' }).catch(() => {
+      // Ignore errors, we just want to trigger the server wakeup
+    });
+  };
+
   // Normalize phone: strip all non-digit chars, then remove a leading "1" (US country code) if 11 digits
   const normalizePhone = (s: string) => {
     const digits = s.replace(/\D/g, ''); // keep only digits
@@ -410,6 +424,8 @@ const Landing: React.FC = () => {
                 id="applywizz_id"
                 placeholder="e.g : AWL-XXX"
                 {...register('applywizz_id')}
+                onFocus={handleWakeup}
+                onKeyDown={handleWakeup}
                 required
                 className="mt-2 border-slate-300 focus:border-primary focus:ring-2 focus:ring-ring"
               />
