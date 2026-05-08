@@ -428,11 +428,8 @@ const OnboardingPage: React.FC = () => {
           else if (addr.includes("ireland")) setValue("zip_or_country", "Ireland", { shouldValidate: true });
         }
 
-        // 5. Skills & Certifications -> Addons
+        // 5. Certifications & Projects -> Addons
         let addons = "";
-        if (parsedData.skills && parsedData.skills.length > 0) {
-          addons += `Skills: ${parsedData.skills.join(", ")}\n`;
-        }
         if (parsedData.certifications && parsedData.certifications.length > 0) {
           addons += `Certifications: ${parsedData.certifications.join(", ")}\n`;
         }
@@ -621,7 +618,7 @@ const OnboardingPage: React.FC = () => {
         experience: data.experience,
         work_preferences: data.work_preferences,
         alternate_job_roles: data.alternate_job_roles,
-        exclude_companies: data.exclude_companies,
+        exclude_companies: (data.exclude_companies && data.exclude_companies.length === 1 && data.exclude_companies[0] === "NA") ? null : data.exclude_companies,
         convicted_of_felony: ynToBool(data.convicted_of_felony),
         felony_explanation: data.felony_explanation || null,
         pending_investigation: ynToBool(data.pending_investigation),
