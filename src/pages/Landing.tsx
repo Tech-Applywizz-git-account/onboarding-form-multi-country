@@ -390,7 +390,7 @@ const Landing: React.FC = () => {
         email: normalizedData.email,
         phone: normalizedData.phone,
       }); // Set the user as authorized and persist their info
-      navigate('/resume-upload', {
+      navigate('/video-validation', {
         replace: true,
       });
     } catch (err: any) {

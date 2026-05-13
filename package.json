@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "npx concurrently \"vite\" \"python -m uvicorn api.main:app --port 8000 --reload\"",
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
