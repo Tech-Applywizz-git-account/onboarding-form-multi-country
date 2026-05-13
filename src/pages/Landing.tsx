@@ -389,6 +389,7 @@ const Landing: React.FC = () => {
         applywizz_id: normalizedData.applywizz_id,
         email: normalizedData.email,
         phone: normalizedData.phone,
+        name: lead?.name || "",
       }); // Set the user as authorized and persist their info
       navigate('/video-validation', {
         replace: true,

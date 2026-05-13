@@ -39,15 +39,18 @@ export interface VerifiedUser {
   applywizz_id: string;
   email: string;
   phone: string;
+  name?: string;
 }
 
 interface AuthContextType {
   isAuthorized: boolean;
   verifiedUser: VerifiedUser | null;
   resumeFile: File | null;
+  videoUrl: string | null;
   authorize: (user: VerifiedUser) => void;
   logout: () => void;
   setResumeFile: (file: File | null) => void;
+  setVideoUrl: (url: string | null) => void;
 }
 
 const SESSION_KEY = 'onboarding_auth';
@@ -70,6 +73,18 @@ export const useAuth = () => {
 
 export const AuthProvider: React.FC<React.PropsWithChildren<{}>> = ({ children }) => {
   const [resumeFile, setResumeFile] = useState<File | null>(null);
+  const [videoUrl, setVideoUrl] = useState<string | null>(() => {
+    return localStorage.getItem('onboarding_video_url');
+  });
+
+  const handleSetVideoUrl = (url: string | null) => {
+    if (url) {
+      localStorage.setItem('onboarding_video_url', url);
+    } else {
+      localStorage.removeItem('onboarding_video_url');
+    }
+    setVideoUrl(url);
+  };
   
   // Initialise from localStorage with a 2-hour expiry check
   const [verifiedUser, setVerifiedUser] = useState<VerifiedUser | null>(() => {
@@ -90,6 +105,7 @@ export const AuthProvider: React.FC<React.PropsWithChildren<{}>> = ({ children }
       // If session is older than 2 hours, clear it
       if (now - session.timestamp > SESSION_TIMEOUT) {
         localStorage.removeItem(SESSION_KEY);
+        localStorage.removeItem('onboarding_video_url');
         return null;
       }
 
@@ -113,12 +129,23 @@ export const AuthProvider: React.FC<React.PropsWithChildren<{}>> = ({ children }
 
   const logout = () => {
     localStorage.removeItem(SESSION_KEY);
+    localStorage.removeItem('onboarding_video_url');
     setVerifiedUser(null);
     setResumeFile(null);
+    setVideoUrl(null);
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthorized, verifiedUser, resumeFile, authorize, logout, setResumeFile }}>
+    <AuthContext.Provider value={{ 
+      isAuthorized, 
+      verifiedUser, 
+      resumeFile, 
+      videoUrl, 
+      authorize, 
+      logout, 
+      setResumeFile,
+      setVideoUrl: handleSetVideoUrl
+    }}>
       {children}
     </AuthContext.Provider>
   );

@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Button } from './ui/button';
 import { Loader2, Mic, StopCircle, Video, Upload, RotateCcw, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { supabase } from '@/lib/supabase';
 
 interface WordComparison {
   word: string;
@@ -12,16 +13,19 @@ type Stage = 'idle' | 'recording' | 'validating' | 'validated' | 'uploading' | '
 
 interface VideoValidatorProps {
   leadId: string;
-  onSuccess?: () => void;
+  name?: string;
+  email?: string;
+  onSuccess?: (videoUrl: string) => void;
 }
 
-export function VideoValidator({ leadId, onSuccess }: VideoValidatorProps) {
+export function VideoValidator({ leadId, name, email, onSuccess }: VideoValidatorProps) {
   const [stage, setStage] = useState<Stage>('idle');
   const [comparison, setComparison] = useState<WordComparison[] | null>(null);
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
   const [processingMessage, setProcessingMessage] = useState('');
 
-  const expectedText = "Hello, I am John Doe, and I authorize this payment";
+  const clientName = name || "the applicant";
+  const expectedText = `Hello, I am ${clientName}, and I acknowledge and agree to avail the services provided by Applywizz.`;
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -79,7 +83,7 @@ export function VideoValidator({ leadId, onSuccess }: VideoValidatorProps) {
     try {
       // 3a. Get presigned URL to temporarily put the video for transcription
       setProcessingMessage('Preparing secure upload...');
-      const fileName = `video-auth-temp-${Date.now()}.webm`;
+      const fileName = `video-auth-temp.webm`;
       const presignedRes = await fetch(
         `/api/presigned-url?fileName=${encodeURIComponent(fileName)}&contentType=video%2Fwebm&leadId=${leadId}`
       );
@@ -136,12 +140,12 @@ export function VideoValidator({ leadId, onSuccess }: VideoValidatorProps) {
 
     try {
       setProcessingMessage('Uploading your video securely...');
-      const fileName = `video-auth-${leadId}-${Date.now()}.webm`;
+      const fileName = `video-auth-${leadId}.webm`;
       const presignedRes = await fetch(
         `/api/presigned-url?fileName=${encodeURIComponent(fileName)}&contentType=video%2Fwebm&leadId=${leadId}`
       );
       if (!presignedRes.ok) throw new Error('Failed to get upload URL');
-      const { presignedUrl } = await presignedRes.json();
+      const { presignedUrl, publicUrl } = await presignedRes.json();
 
       const uploadRes = await fetch(presignedUrl, {
         method: 'PUT',
@@ -150,9 +154,52 @@ export function VideoValidator({ leadId, onSuccess }: VideoValidatorProps) {
       });
       if (!uploadRes.ok) throw new Error('Upload to S3 failed');
 
+      // ── Step 5: Save to Database ──────────────────────────────────────────
+      setProcessingMessage('Saving to your profile...');
+      console.log('Syncing to DB. Lead:', leadId, 'URL:', publicUrl);
+      
+      // 1. Check if a record already exists for this lead_id
+      const { data: existing, error: findError } = await supabase
+        .from("client_onborading_details")
+        .select("id")
+        .eq("lead_id", leadId.trim())
+        .maybeSingle();
+
+      if (findError) {
+        console.error('Error finding existing record:', findError);
+      }
+
+      if (existing) {
+        // 2. Update existing record by its UUID (most reliable way)
+        const { error: updateError } = await supabase
+          .from("client_onborading_details")
+          .update({ video_url: publicUrl })
+          .eq("id", existing.id);
+
+        if (updateError) {
+          console.error('Update Error:', updateError);
+          throw new Error(`Failed to update video URL: ${updateError.message}`);
+        }
+      } else {
+        // 3. Create a new record if none exists
+        const { error: insertError } = await supabase
+          .from("client_onborading_details")
+          .insert({
+            lead_id: leadId,
+            video_url: publicUrl,
+            full_name: name || "Pending Name",
+            personal_email: email || "pending@email.com",
+          });
+
+        if (insertError) {
+          console.error('Insert Error:', insertError);
+          throw new Error(`Failed to create record: ${insertError.message}`);
+        }
+      }
+
       setStage('done');
-      toast.success('Video saved successfully!');
-      setTimeout(() => onSuccess?.(), 1500);
+      toast.success('Video uploaded and saved successfully!');
+      setTimeout(() => onSuccess?.(publicUrl), 1500);
     } catch (err: any) {
       console.error(err);
       toast.error(err.message || 'Upload failed. Please try again.');

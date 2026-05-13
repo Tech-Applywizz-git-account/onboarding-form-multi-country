@@ -2,17 +2,22 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { ChevronLeft } from "lucide-react";
+import { supabase } from "@/lib/supabase";
 import { VideoValidator } from "@/components/VideoValidator";
+import { toast } from "sonner";
 
 const VideoValidationPage: React.FC = () => {
   const navigate = useNavigate();
-  const { verifiedUser } = useAuth();
+  const { verifiedUser, setVideoUrl } = useAuth();
   
   const leadId = verifiedUser?.applywizz_id || "unknown";
 
-  const handleSuccess = () => {
-    // Proceed to the resume upload page after successful validation
-    navigate("/resume-upload", { replace: true });
+  const handleSuccess = (url: string) => {
+    setVideoUrl(url);
+    // Proceed to the resume upload page after successful validation and DB sync
+    setTimeout(() => {
+      navigate("/resume-upload", { replace: true });
+    }, 500);
   };
 
   return (
@@ -32,7 +37,12 @@ const VideoValidationPage: React.FC = () => {
             </div>
 
             {/* Video Validator Component */}
-            <VideoValidator leadId={leadId} onSuccess={handleSuccess} />
+            <VideoValidator 
+              leadId={leadId} 
+              name={verifiedUser?.name}
+              email={verifiedUser?.email}
+              onSuccess={handleSuccess} 
+            />
           </div>
         </div>
       </main>
