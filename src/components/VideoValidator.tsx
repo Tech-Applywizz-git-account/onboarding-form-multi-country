@@ -30,8 +30,16 @@ export function VideoValidator({ leadId, name, email, onSuccess }: VideoValidato
   const videoRef = useRef<HTMLVideoElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
+  const timeoutRef = useRef<any>(null);
 
   const allGreen = comparison != null && comparison.every(w => w.match);
+
+  // Cleanup timeout on unmount
+  React.useEffect(() => {
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, []);
 
   // ── Step 1: Start Recording ──────────────────────────────────────────────
   const startRecording = async () => {
@@ -55,6 +63,23 @@ export function VideoValidator({ leadId, name, email, onSuccess }: VideoValidato
       setStage('recording');
       setComparison(null);
       setRecordedBlob(null);
+
+      // ── Auto-stop after 30 seconds ───────────────────────────────────────
+      // NOTE: We do NOT call stopRecording() here because it reads `stage`
+      // from a stale closure. Instead, we directly use the mutable ref which
+      // always reflects the live MediaRecorder state.
+      timeoutRef.current = setTimeout(() => {
+        if (mediaRecorderRef.current?.state === 'recording') {
+          toast.info("Recording reached 30-second limit. Processing now...");
+          // Stop tracks (turns off camera/mic indicator)
+          if (videoRef.current?.srcObject) {
+            (videoRef.current.srcObject as MediaStream).getTracks().forEach(t => t.stop());
+            videoRef.current.srcObject = null;
+          }
+          // Stop the recorder — this fires onstop → handleValidate automatically
+          mediaRecorderRef.current.stop();
+        }
+      }, 30000);
     } catch (err) {
       console.error('Error accessing media devices.', err);
       toast.error('Could not access camera or microphone. Please grant permissions.');
@@ -63,6 +88,12 @@ export function VideoValidator({ leadId, name, email, onSuccess }: VideoValidato
 
   // ── Step 2: Stop Recording ───────────────────────────────────────────────
   const stopRecording = () => {
+    // Clear the auto-stop timeout if it exists
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+
     if (mediaRecorderRef.current && stage === 'recording') {
       mediaRecorderRef.current.stop();
       // Stop all camera/mic tracks so the recording indicator turns off
