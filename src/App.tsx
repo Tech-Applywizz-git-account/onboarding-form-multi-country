@@ -44,6 +44,7 @@ import Onboarding from "./pages/Onboarding/index";
 import Success from "./pages/Success";
 import NotFound from "./pages/NotFound";
 import ResumeUpload from "./pages/Onboarding/ResumeUpload";
+import VideoValidationPage from "./pages/Onboarding/VideoValidationPage";
 import { AuthProvider, useAuth } from "./contexts/AuthContext"; // Import AuthContext
 
 const queryClient = new QueryClient();
@@ -59,6 +60,14 @@ const App: React.FC = () => {
             <Routes>
               <Route path="/" element={<Landing />} />
               {/* Protect Onboarding route with authentication check */}
+              <Route
+                path="/video-validation"
+                element={
+                  <ProtectedRoute>
+                    <VideoValidationPage />
+                  </ProtectedRoute>
+                }
+              />
               <Route
                 path="/resume-upload"
                 element={

@@ -89,7 +89,7 @@ const FIELD_LABELS: Record<string, string> = {
 const OnboardingPage: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { verifiedUser, resumeFile, setResumeFile } = useAuth();
+  const { verifiedUser, resumeFile, setResumeFile, videoUrl } = useAuth();
   const verified = verifiedUser;
 
   // Safety redirect if someone bypasses ProtectedRoute (shouldn't happen)
@@ -589,6 +589,7 @@ const OnboardingPage: React.FC = () => {
         cover_letter_path,
         submitted_by: null,
         lead_id: verified.applywizz_id,
+        video_url: videoUrl,
         created_at: new Date().toISOString(),
         date_of_birth: data.date_of_birth ? new Date(data.date_of_birth) : null,
         willing_to_travel: ynToBool(data.willing_to_travel),
@@ -649,7 +650,7 @@ const OnboardingPage: React.FC = () => {
 
       const { data: existingForm, error: existingErr } = await supabase
         .from("client_onborading_details")
-        .select("id, no_of_times_form_filled")
+        .select("id, no_of_times_form_filled, video_url")
         .eq("lead_id", verified.applywizz_id)
         .maybeSingle();
 
@@ -658,7 +659,9 @@ const OnboardingPage: React.FC = () => {
       if (existingForm) {
         const updatedPayload = {
           ...payload,
-          no_of_times_form_filled: existingForm.no_of_times_form_filled + 1,
+          // If local videoUrl is missing but DB has one, use the DB version
+          video_url: videoUrl || existingForm.video_url,
+          no_of_times_form_filled: (existingForm.no_of_times_form_filled || 0) + 1,
         };
         const { error: updateError } = await supabase.from("client_onborading_details").update(updatedPayload).eq("lead_id", verified.applywizz_id);
         if (updateError) throw updateError;
