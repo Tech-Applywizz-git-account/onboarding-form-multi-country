@@ -71,7 +71,7 @@ const App: React.FC = () => {
               <Route
                 path="/resume-upload"
                 element={
-                  <ProtectedRoute>
+                  <ProtectedRoute requireVideo>
                     <ResumeUpload />
                   </ProtectedRoute>
                 }
@@ -79,7 +79,7 @@ const App: React.FC = () => {
               <Route
                 path="/onboarding"
                 element={
-                  <ProtectedRoute>
+                  <ProtectedRoute requireVideo>
                     <Onboarding />
                   </ProtectedRoute>
                 }
@@ -87,7 +87,7 @@ const App: React.FC = () => {
               <Route
                 path="/success"
                 element={
-                  <ProtectedRoute>
+                  <ProtectedRoute requireVideo>
                     <Success />
                   </ProtectedRoute>
                 }
@@ -102,12 +102,17 @@ const App: React.FC = () => {
 };
 
 // ProtectedRoute  component
-const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isAuthorized } = useAuth();
+const ProtectedRoute: React.FC<{ children: React.ReactNode; requireVideo?: boolean }> = ({ children, requireVideo }) => {
+  const { isAuthorized, videoUrl } = useAuth();
 
   if (!isAuthorized) {
     // If not authorized, redirect to the landing page
     return <Navigate to="/" replace />;
+  }
+
+  if (requireVideo && !videoUrl) {
+    // If authorized but video validation not completed, redirect to video validation
+    return <Navigate to="/video-validation" replace />;
   }
 
   return <>{children}</>; // Allow access to the route if authorized

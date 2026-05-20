@@ -255,14 +255,18 @@ const Landing: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { authorize, isAuthorized } = useAuth(); // Use the authorize function
+  const { authorize, isAuthorized, videoUrl } = useAuth(); // Use the authorize function
 
   // Auto-redirect if already authorized
   useEffect(() => {
     if (isAuthorized) {
-      navigate('/resume-upload', { replace: true });
+      if (videoUrl) {
+        navigate('/resume-upload', { replace: true });
+      } else {
+        navigate('/video-validation', { replace: true });
+      }
     }
-  }, [isAuthorized, navigate]);
+  }, [isAuthorized, videoUrl, navigate]);
 
   const {
     register,
