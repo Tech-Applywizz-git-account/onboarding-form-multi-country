@@ -96,8 +96,10 @@ const OnboardingPage: React.FC = () => {
   useEffect(() => {
     if (!verified) {
       navigate("/", { replace: true });
+    } else if (!videoUrl) {
+      navigate("/video-validation", { replace: true });
     }
-  }, [verified, navigate]);
+  }, [verified, videoUrl, navigate]);
 
   // Local State
   const [step, setStep] = useState(1);
