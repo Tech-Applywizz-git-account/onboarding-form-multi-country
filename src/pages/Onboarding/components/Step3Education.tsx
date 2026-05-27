@@ -525,6 +525,20 @@ export const Step3Education: React.FC<Step3Props> = ({
               <SelectItem value="Other">Other</SelectItem>
             </SelectContent>
           </Select>
+          {jobRoles.includes("Other") && (
+            <div className="mt-2">
+              <Input
+                {...register("job_role_other")}
+                placeholder="Enter other preferred job role"
+                className={cn("h-11 border-slate-200 focus:border-blue-500 focus:ring-0", errors.job_role_other && "border-destructive focus:border-destructive")}
+              />
+              {errors.job_role_other && (
+                <p className="text-xs font-medium text-destructive mt-1 animate-in fade-in slide-in-from-top-1">
+                  {errors.job_role_other.message}
+                </p>
+              )}
+            </div>
+          )}
         </FormField>
 
         <div className="space-y-4">

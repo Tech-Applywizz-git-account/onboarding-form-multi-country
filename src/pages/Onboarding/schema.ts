@@ -178,6 +178,17 @@ export const schema = z.object({
     }
   }
 
+  // Conditional Validation for 'Other' Preferred Job Role
+  if (data.job_role_preferences?.includes("Other")) {
+    if (!data.job_role_other || data.job_role_other.trim() === "") {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Required",
+        path: ["job_role_other"],
+      });
+    }
+  }
+
   // Conditional Validation for Alternate Job Roles
   if (data.has_alternates_available) {
     if (!data.alternate_job_roles || data.alternate_job_roles.trim() === "") {
