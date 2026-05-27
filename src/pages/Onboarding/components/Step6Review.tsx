@@ -102,7 +102,11 @@ export const Step6Review: React.FC<Step6Props> = ({
         <ReviewItem label="Desired Start Date" value={data.desired_start_date} />
         <ReviewItem label="Salary Expectations" value={`${data.salary_currency} ${data.salary_expectations}`} fullWidth />
         <ReviewItem label="Work Preferences" value={data.work_preferences?.join(", ")} fullWidth />
-        <ReviewItem label="Job Role Preferences" value={data.job_role_preferences?.join(", ")} fullWidth />
+        <ReviewItem 
+          label="Job Role Preferences" 
+          value={data.job_role_preferences?.map(role => role === "Other" && data.job_role_other ? `Other - ${data.job_role_other}` : role).join(", ")} 
+          fullWidth 
+        />
         <ReviewItem label="Location Preferences" value={data.location_preferences?.join(", ")} fullWidth />
         <ReviewItem label="Alternate Job Roles" value={data.alternate_job_roles} fullWidth />
         <ReviewItem label="Excluded Companies" value={data.exclude_companies?.join(", ")} fullWidth />
