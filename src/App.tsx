@@ -84,14 +84,7 @@ const App: React.FC = () => {
                   </ProtectedRoute>
                 }
               />
-              <Route
-                path="/success"
-                element={
-                  <ProtectedRoute requireVideo>
-                    <Success />
-                  </ProtectedRoute>
-                }
-              />
+              <Route path="/success" element={<Success />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

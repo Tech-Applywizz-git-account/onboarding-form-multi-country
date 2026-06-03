@@ -1,16 +1,25 @@
-import React from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { ChevronLeft } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { VideoValidator } from "@/components/VideoValidator";
 import { toast } from "sonner";
+import { Navbar } from "@/components/Navbar";
 
 const VideoValidationPage: React.FC = () => {
   const navigate = useNavigate();
-  const { verifiedUser, setVideoUrl } = useAuth();
+  const location = useLocation();
+  const { verifiedUser, setVideoUrl, videoUrl } = useAuth();
   
   const leadId = verifiedUser?.applywizz_id || "unknown";
+
+  useEffect(() => {
+    const state = location.state as { forceRecord?: boolean } | null;
+    if (videoUrl && !state?.forceRecord) {
+      navigate("/resume-upload", { replace: true });
+    }
+  }, [videoUrl, navigate, location.state]);
 
   const handleSuccess = (url: string) => {
     setVideoUrl(url);
@@ -22,6 +31,7 @@ const VideoValidationPage: React.FC = () => {
 
   return (
     <div className="min-h-screen w-full bg-[#F8F9FA] flex flex-col font-sans overflow-hidden">
+      <Navbar />
       <main className="flex-1 flex flex-col items-center justify-center p-4">
         <div className="w-full max-w-2xl bg-white border border-slate-200 rounded-lg shadow-md flex flex-col relative animate-in fade-in zoom-in-95 duration-500 overflow-hidden">
           {/* Blue Top Accent */}

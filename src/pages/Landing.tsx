@@ -255,7 +255,7 @@ const Landing: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { authorize, isAuthorized, videoUrl } = useAuth(); // Use the authorize function
+  const { authorize, isAuthorized, videoUrl, setVideoUrl } = useAuth(); // Use the authorize function
 
   // Auto-redirect if already authorized
   useEffect(() => {
@@ -376,7 +376,7 @@ const Landing: React.FC = () => {
       // 3) limit check based on lead_id and no_of_times_form_filled < 3
       const { data: existingForm, error: formErr } = await supabase
         .from('client_onborading_details')
-        .select('no_of_times_form_filled')
+        .select('no_of_times_form_filled, video_url')
         .eq('lead_id', normalizedData.applywizz_id)
         .maybeSingle();
 
@@ -395,9 +395,14 @@ const Landing: React.FC = () => {
         phone: normalizedData.phone,
         name: lead?.name || "",
       }); // Set the user as authorized and persist their info
-      navigate('/video-validation', {
-        replace: true,
-      });
+
+      const finalVideoUrl = existingForm?.video_url || localStorage.getItem('onboarding_video_url');
+      if (finalVideoUrl) {
+        setVideoUrl(finalVideoUrl);
+        navigate('/resume-upload', { replace: true });
+      } else {
+        navigate('/video-validation', { replace: true });
+      }
     } catch (err: any) {
       console.error(err);
       setError('applywizz_id', { message: 'Something went wrong. Please try again.' });

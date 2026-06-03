@@ -13,7 +13,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, LogOut } from "lucide-react";
+import { Navbar } from "@/components/Navbar";
 
 // Schema & Constants
 import { schema, FormVals } from "./schema";
@@ -90,8 +91,16 @@ const FIELD_LABELS: Record<string, string> = {
 const OnboardingPage: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { verifiedUser, resumeFile, setResumeFile, videoUrl } = useAuth();
+  const { verifiedUser, resumeFile, setResumeFile, videoUrl, logout } = useAuth();
   const verified = verifiedUser;
+
+  const handleLogout = () => {
+    localStorage.removeItem("resume_parsed_data");
+    localStorage.removeItem("last_uploaded_resume_name");
+    logout();
+    toast({ title: "Logged out", description: "All local caches cleared." });
+    navigate("/", { replace: true });
+  };
 
   // Safety redirect if someone bypasses ProtectedRoute (shouldn't happen)
   useEffect(() => {
@@ -266,18 +275,20 @@ const OnboardingPage: React.FC = () => {
   // Check Submission Chances
   useEffect(() => {
     (async () => {
-      if (!verified.email) return;
-      const { count, error } = await supabase
+      if (!verified.applywizz_id) return;
+      const { data, error } = await supabase
         .from("client_onborading_details")
-        .select("id", { count: "exact", head: true })
-        .eq("personal_email", verified.email);
+        .select("no_of_times_form_filled")
+        .eq("lead_id", verified.applywizz_id)
+        .maybeSingle();
       if (!error) {
-        const remaining = Math.max(0, 2 - (count ?? 0));
+        const count = data?.no_of_times_form_filled ?? 0;
+        const remaining = Math.max(0, 2 - count);
         setRemainingChances(remaining);
         setShowChancesDialog(true);
       }
     })();
-  }, [verified.email]);
+  }, [verified.applywizz_id]);
 
   // Sync Resume Dummy Field for Validation
   useEffect(() => {
@@ -622,7 +633,9 @@ const OnboardingPage: React.FC = () => {
         experience: data.experience,
         work_preferences: data.work_preferences,
         alternate_job_roles: data.alternate_job_roles,
-        exclude_companies: (data.exclude_companies && data.exclude_companies.length === 1 && data.exclude_companies[0] === "NA") ? null : data.exclude_companies,
+        exclude_companies: (data.exclude_companies && data.exclude_companies.length > 0)
+          ? ((data.exclude_companies.length === 1 && data.exclude_companies[0] === "NA") ? null : data.exclude_companies.join(","))
+          : null,
         convicted_of_felony: ynToBool(data.convicted_of_felony),
         felony_explanation: data.felony_explanation || null,
         pending_investigation: ynToBool(data.pending_investigation),
@@ -675,8 +688,12 @@ const OnboardingPage: React.FC = () => {
         toast({ title: "Onboarding completed successfully!" });
       }
 
-      // Clear parsed data on success
+      // Clear parsed data and other local storage keys on success
       localStorage.removeItem("resume_parsed_data");
+      localStorage.removeItem("last_uploaded_resume_name");
+      
+      // Logout to clear the session credentials and states
+      logout();
 
       navigate("/success", { replace: true });
     } catch (e: any) {
@@ -757,8 +774,10 @@ const OnboardingPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 p-4 md:p-8">
-      <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in duration-500">
+    <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
+      <Navbar />
+      <div className="flex-1 p-4 md:p-8">
+        <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in duration-500">
         {/* Chances Dialog */}
         <Dialog open={showChancesDialog} onOpenChange={setShowChancesDialog}>
           <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
@@ -772,20 +791,32 @@ const OnboardingPage: React.FC = () => {
                   ? "Checking your submission records..."
                   : `You have ${remainingChances} of 2 submission attempts remaining.`}
                 {remainingChances === 0 && (
-                  <p className="mt-3 text-destructive font-semibold">
+                  <span className="block mt-3 text-destructive font-semibold">
                     You have reached the submission limit. Further updates are blocked.
-                  </p>
+                  </span>
                 )}
               </DialogDescription>
             </DialogHeader>
-            <Button onClick={() => setShowChancesDialog(false)}>Got it</Button>
+            <div className="flex gap-2 justify-end mt-4">
+              {remainingChances === 0 && (
+                <Button
+                  variant="outline"
+                  onClick={handleLogout}
+                  className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
+                >
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Logout
+                </Button>
+              )}
+              <Button onClick={() => setShowChancesDialog(false)}>Got it</Button>
+            </div>
           </DialogContent>
         </Dialog>
 
         {/* Header Section */}
         <div className="bg-white rounded-2xl p-6 shadow-xl border border-slate-100 flex flex-col md:flex-row justify-between items-center gap-6 relative overflow-hidden group">
           <div className="absolute top-0 left-0 w-1 bg-blue-600 h-full" />
-          <div className="flex-1 text-center md:text-left">
+          <div className="flex-1 text-center md:text-left w-full">
             <h1 className="text-2xl font-bold text-slate-900 mb-1">Onboarding Process</h1>
             <p className="text-slate-500 text-sm">Step {step} of 6 — {
               step === 1 ? "Personal Details" :
@@ -817,13 +848,6 @@ const OnboardingPage: React.FC = () => {
               </div>
             </div>
           </div>
-          {/* <Button
-            variant="outline"
-            onClick={handlePrefill}
-            className="w-full md:w-auto border-blue-200 text-blue-700 hover:bg-blue-50 hover:border-blue-300 shadow-sm transition-all text-xs"
-          >
-            Prefill for Testing
-          </Button> */}
         </div>
 
         {/* Form Section */}
@@ -925,6 +949,7 @@ const OnboardingPage: React.FC = () => {
         </Dialog>
       </div>
     </div>
+  </div>
   );
 };
 

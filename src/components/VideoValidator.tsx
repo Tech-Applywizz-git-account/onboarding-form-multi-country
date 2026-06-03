@@ -2,7 +2,6 @@ import React, { useState, useRef } from 'react';
 import { Button } from './ui/button';
 import { Loader2, Mic, StopCircle, Video, Upload, RotateCcw, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { supabase } from '@/lib/supabase';
 
 interface WordComparison {
   word: string;
@@ -185,52 +184,10 @@ export function VideoValidator({ leadId, name, email, onSuccess }: VideoValidato
       });
       if (!uploadRes.ok) throw new Error('Upload to S3 failed');
 
-      // ── Step 5: Save to Database ──────────────────────────────────────────
-      setProcessingMessage('Saving to your profile...');
-      console.log('Syncing to DB. Lead:', leadId, 'URL:', publicUrl);
-      
-      // 1. Check if a record already exists for this lead_id
-      const { data: existing, error: findError } = await supabase
-        .from("client_onborading_details")
-        .select("id")
-        .eq("lead_id", leadId.trim())
-        .maybeSingle();
-
-      if (findError) {
-        console.error('Error finding existing record:', findError);
-      }
-
-      if (existing) {
-        // 2. Update existing record by its UUID (most reliable way)
-        const { error: updateError } = await supabase
-          .from("client_onborading_details")
-          .update({ video_url: publicUrl })
-          .eq("id", existing.id);
-
-        if (updateError) {
-          console.error('Update Error:', updateError);
-          throw new Error(`Failed to update video URL: ${updateError.message}`);
-        }
-      } else {
-        // 3. Create a new record if none exists
-        const { error: insertError } = await supabase
-          .from("client_onborading_details")
-          .insert({
-            lead_id: leadId,
-            video_url: publicUrl,
-            full_name: name || "Pending Name",
-            personal_email: email || "pending@email.com",
-          });
-
-        if (insertError) {
-          console.error('Insert Error:', insertError);
-          throw new Error(`Failed to create record: ${insertError.message}`);
-        }
-      }
-
       setStage('done');
-      toast.success('Video uploaded and saved successfully!');
+      toast.success('Video uploaded successfully!');
       setTimeout(() => onSuccess?.(publicUrl), 1500);
+
     } catch (err: any) {
       console.error(err);
       toast.error(err.message || 'Upload failed. Please try again.');

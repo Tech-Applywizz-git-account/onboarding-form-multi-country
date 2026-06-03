@@ -33,7 +33,8 @@
 
 
 // src/contexts/AuthContext.tsx
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
 
 export interface VerifiedUser {
   applywizz_id: string;
@@ -115,6 +116,27 @@ export const AuthProvider: React.FC<React.PropsWithChildren<{}>> = ({ children }
       return null;
     }
   });
+
+  // Fetch video_url from database if authorized but local videoUrl is missing
+  useEffect(() => {
+    if (verifiedUser && !videoUrl) {
+      const fetchVideoUrl = async () => {
+        try {
+          const { data, error } = await supabase
+            .from('client_onborading_details')
+            .select('video_url')
+            .eq('lead_id', verifiedUser.applywizz_id)
+            .maybeSingle();
+          if (!error && data?.video_url) {
+            handleSetVideoUrl(data.video_url);
+          }
+        } catch (err) {
+          console.error("Error fetching video url from DB:", err);
+        }
+      };
+      fetchVideoUrl();
+    }
+  }, [verifiedUser, videoUrl]);
 
   const isAuthorized = !!verifiedUser;
 

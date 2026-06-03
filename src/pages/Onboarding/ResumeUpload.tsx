@@ -9,10 +9,12 @@ import { extractTextFromFile, parseResumeViaRoute } from "./resumeParser";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
+import { Navbar } from "@/components/Navbar";
 
 const ResumeUpload: React.FC = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const toastObj = useToast();
+  const toast = toastObj.toast;
   const { resumeFile, setResumeFile } = useAuth();
   const [isVisibleToRecruiters, setIsVisibleToRecruiters] = useState(true);
   const [isParsing, setIsParsing] = useState(false);
@@ -61,15 +63,7 @@ const ResumeUpload: React.FC = () => {
 
   return (
     <div className="h-screen w-screen bg-[#F8F9FA] flex flex-col font-sans overflow-hidden">
-      {/* Header - Compact */}
-      {/* <header className="h-12 bg-white border-b border-slate-200 flex items-center px-6 md:px-10 flex-shrink-0 shadow-sm z-10">
-        <div className="flex items-center gap-2">
-          <div className="bg-[#1A1A1A] p-1 rounded-md">
-            <span className="text-white font-black text-sm tracking-tighter">AW</span>
-          </div>
-          <span className="text-lg font-bold text-slate-900 tracking-tight">ApplyWizz</span>
-        </div>
-      </header> */}
+      <Navbar />
 
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col items-center justify-center p-4 overflow-hidden">
@@ -91,7 +85,7 @@ const ResumeUpload: React.FC = () => {
           <div className="p-5 md:p-8 flex flex-col gap-4 overflow-y-auto min-h-0">
             {/* Back Link */}
             <button
-              onClick={() => navigate("/")}
+              onClick={() => navigate("/video-validation", { state: { forceRecord: true } })}
               className="flex items-center text-[#1F4096] font-bold text-[13px] hover:underline w-fit"
             >
               <ChevronLeft className="h-3.5 w-3.5" />
