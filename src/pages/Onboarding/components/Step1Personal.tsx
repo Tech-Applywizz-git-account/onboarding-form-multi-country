@@ -16,6 +16,9 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
+
+
+
 } from "@/components/ui/popover";
 import {
   Command,
@@ -235,10 +238,10 @@ export const Step1Personal = ({
             placeholder="Email Address"
           />
         </FormField>
-        <FormField 
-          id="date_of_birth" 
+        <FormField
+          id="date_of_birth"
           label={`Date of Birth (${selectedCountry === "United States" || selectedCountry === "USA" ? "MM-DD-YYYY" : "DD-MM-YYYY"})`}
-          required 
+          required
           error={errors.date_of_birth}
         >
           <Input

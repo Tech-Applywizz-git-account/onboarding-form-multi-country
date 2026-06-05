@@ -84,7 +84,14 @@ export const Step5Demographics: React.FC<Step5Props> = ({
               </Select>
             </FormField>
             {watch("gender") === "Other" && (
-              <Input {...register("gender_other")} placeholder="Specify gender" className="h-10 border-slate-200 animate-in fade-in slide-in-from-top-2" />
+              <div className="space-y-1">
+                <Input {...register("gender_other")} placeholder="Specify gender" className="h-10 border-slate-200 animate-in fade-in slide-in-from-top-2" />
+                {errors.gender_other && (
+                  <p className="text-xs font-medium text-destructive mt-1">
+                    {errors.gender_other.message}
+                  </p>
+                )}
+              </div>
             )}
           </div>
 
@@ -106,7 +113,14 @@ export const Step5Demographics: React.FC<Step5Props> = ({
               </Select>
             </FormField>
             {watch("pronouns") === "Other" && (
-              <Input {...register("pronouns_other")} placeholder="Specify pronouns" className="h-10 border-slate-200 animate-in fade-in slide-in-from-top-2" />
+              <div className="space-y-1">
+                <Input {...register("pronouns_other")} placeholder="Specify pronouns" className="h-10 border-slate-200 animate-in fade-in slide-in-from-top-2" />
+                {errors.pronouns_other && (
+                  <p className="text-xs font-medium text-destructive mt-1">
+                    {errors.pronouns_other.message}
+                  </p>
+                )}
+              </div>
             )}
           </div>
         </div>
@@ -167,7 +181,14 @@ export const Step5Demographics: React.FC<Step5Props> = ({
               </Select>
             </FormField>
             {watch("current_country_timezone") === "Other" && (
-              <Input {...register("current_country_timezone_other")} placeholder="Specify location & timezone" className="h-10 border-slate-200 animate-in fade-in slide-in-from-top-2" />
+              <div className="space-y-1">
+                <Input {...register("current_country_timezone_other")} placeholder="Specify location & timezone" className="h-10 border-slate-200 animate-in fade-in slide-in-from-top-2" />
+                {errors.current_country_timezone_other && (
+                  <p className="text-xs font-medium text-destructive mt-1">
+                    {errors.current_country_timezone_other.message}
+                  </p>
+                )}
+              </div>
             )}
           </div>
 
@@ -195,7 +216,14 @@ export const Step5Demographics: React.FC<Step5Props> = ({
                 </Select>
               </FormField>
               {watch("province_territory") === "Other" && (
-                <Input {...register("province_territory_other")} placeholder="Specify location" className="h-10 border-slate-200 animate-in fade-in slide-in-from-top-2" />
+                <div className="space-y-1">
+                  <Input {...register("province_territory_other")} placeholder="Specify location" className="h-10 border-slate-200 animate-in fade-in slide-in-from-top-2" />
+                  {errors.province_territory_other && (
+                    <p className="text-xs font-medium text-destructive mt-1">
+                      {errors.province_territory_other.message}
+                    </p>
+                  )}
+                </div>
               )}
             </div>
           )}
@@ -222,7 +250,14 @@ export const Step5Demographics: React.FC<Step5Props> = ({
               )}
             </FormField>
             {watch("county") === "Other" && (
-              <Input {...register("county_other")} placeholder="Specify county" className="h-10 border-slate-200 animate-in fade-in slide-in-from-top-2" />
+              <div className="space-y-1">
+                <Input {...register("county_other")} placeholder="Specify county" className="h-10 border-slate-200 animate-in fade-in slide-in-from-top-2" />
+                {errors.county_other && (
+                  <p className="text-xs font-medium text-destructive mt-1">
+                    {errors.county_other.message}
+                  </p>
+                )}
+              </div>
             )}
           </div>
 
@@ -243,7 +278,14 @@ export const Step5Demographics: React.FC<Step5Props> = ({
               </Select>
             </FormField>
             {watch("religion") === "Other" && (
-              <Input {...register("religion_other")} placeholder="Specify religion" className="h-10 border-slate-200 animate-in fade-in slide-in-from-top-2" />
+              <div className="space-y-1">
+                <Input {...register("religion_other")} placeholder="Specify religion" className="h-10 border-slate-200 animate-in fade-in slide-in-from-top-2" />
+                {errors.religion_other && (
+                  <p className="text-xs font-medium text-destructive mt-1">
+                    {errors.religion_other.message}
+                  </p>
+                )}
+              </div>
             )}
           </div>
         </div>
@@ -308,7 +350,14 @@ export const Step5Demographics: React.FC<Step5Props> = ({
                 </Select>
               </FormField>
               {watch("race_ethnicity") === "Other" && (
-                <Input {...register("race_ethnicity_other")} placeholder="Specify race/ethnicity" className="h-10 border-slate-200 animate-in fade-in slide-in-from-top-2" />
+                <div className="space-y-1">
+                  <Input {...register("race_ethnicity_other")} placeholder="Specify race/ethnicity" className="h-10 border-slate-200 animate-in fade-in slide-in-from-top-2" />
+                  {errors.race_ethnicity_other && (
+                    <p className="text-xs font-medium text-destructive mt-1">
+                      {errors.race_ethnicity_other.message}
+                    </p>
+                  )}
+                </div>
               )}
             </div>
           </div>

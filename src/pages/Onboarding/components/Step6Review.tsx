@@ -64,6 +64,7 @@ export const Step6Review: React.FC<Step6Props> = ({
         <ReviewItem label="Middle Name" value={data.middle_name} />
         <ReviewItem label="Last Name" value={data.last_name} />
         <ReviewItem label="Personal Email" value={data.personal_email} />
+        <ReviewItem label="Job Application Email (Job Marketing)" value={data.company_email} />
         <ReviewItem label="Primary Phone" value={data.primary_phone} />
         <ReviewItem label="WhatsApp Number" value={data.whatsapp_number} />
         <ReviewItem label="Date of Birth" value={data.date_of_birth} />

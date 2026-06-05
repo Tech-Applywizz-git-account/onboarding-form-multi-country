@@ -8,6 +8,7 @@ export const schema = z.object({
   middle_name: z.string().optional(),
   last_name: z.string().min(1, "Required"),
   personal_email: z.string().email("Invalid email"),
+  company_email: z.string().email("Invalid email"),
   primary_phone: z.string().regex(/^\+[0-9]+$/, "Please enter a valid phone number"),
   callable_phone: z.string().optional(),
   whatsapp_number: z.string().regex(/^\+[0-9]+$/, "Please enter a valid phone number"),

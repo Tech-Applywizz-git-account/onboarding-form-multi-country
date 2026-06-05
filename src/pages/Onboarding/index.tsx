@@ -34,6 +34,7 @@ const FIELD_LABELS: Record<string, string> = {
   first_name: "First Name",
   last_name: "Last Name",
   personal_email: "Email Address",
+  company_email: "Job Application email address (job marketing)",
   primary_phone: "Primary Phone",
   whatsapp_number: "WhatsApp Number",
   full_address: "Full Address",
@@ -76,16 +77,23 @@ const FIELD_LABELS: Record<string, string> = {
   uses_substances_affecting_duties: "Substance Use",
   can_provide_legal_docs: "Legal Documentation",
   gender: "Gender",
+  gender_other: "Other Gender",
   pronouns: "Pronoun",
+  pronouns_other: "Other Pronouns",
   religion: "Religion",
+  religion_other: "Other Religion",
   is_hispanic_latino: "Hispanic/Latino Status",
   race_ethnicity: "Race/Ethnicity",
+  race_ethnicity_other: "Other Race / Ethnicity",
   veteran_status: "Veteran Status",
   disability_status: "Disability Status",
   financial_licenses: "Financial Services Industry Licenses",
   current_country_timezone: "Current Country & Timezone",
+  current_country_timezone_other: "Other Country & Timezone",
   province_territory: "Province / Territory",
+  province_territory_other: "Other Province / Territory / State",
   county: "County",
+  county_other: "Other County",
 };
 
 const OnboardingPage: React.FC = () => {
@@ -141,6 +149,7 @@ const OnboardingPage: React.FC = () => {
       middle_name: "",
       last_name: "",
       personal_email: "",
+      company_email: "",
       primary_phone: "+",
       callable_phone: "+",
       whatsapp_number: "+",
@@ -495,11 +504,11 @@ const OnboardingPage: React.FC = () => {
 
 
   const stepFieldMap: Record<number, (keyof FormVals)[]> = {
-    1: ["first_name", "last_name", "personal_email", "primary_phone", "whatsapp_number", "full_address", "visatype", "visatype_other", "date_of_birth", "zip_or_country", "resume_dummy"],
+    1: ["first_name", "last_name", "personal_email", "company_email", "primary_phone", "whatsapp_number", "full_address", "visatype", "visatype_other", "date_of_birth", "zip_or_country", "resume_dummy"],
     2: ["is_over_18", "eligible_to_work_in_us", "authorized_without_visa", "require_future_sponsorship", "can_perform_essential_functions", "discharged_for_policy_violation", "referred_by_agency"],
     3: ["highest_education", "university_name", "main_subject", "graduation_year", "cgpa", "desired_start_date", "willing_to_relocate", "can_work_3_days_in_office", "salary_expectations", "salary_period", "role", "experience", "work_preferences", "job_role_preferences", "job_role_other", "location_preferences", "willing_to_travel", "notice_period", "employment_status", "employment_history", "alternate_job_roles", "has_alternates_available"],
     4: ["convicted_of_felony", "felony_explanation", "pending_investigation", "willing_background_check", "willing_drug_screen", "failed_or_refused_drug_test", "uses_substances_affecting_duties", "substances_description", "can_provide_legal_docs"],
-    5: ["gender", "pronouns", "religion", "is_hispanic_latino", "race_ethnicity", "veteran_status", "disability_status", "financial_licenses", "current_country_timezone", "province_territory", "county"],
+    5: ["gender", "gender_other", "pronouns", "pronouns_other", "religion", "religion_other", "is_hispanic_latino", "race_ethnicity", "race_ethnicity_other", "veteran_status", "disability_status", "financial_licenses", "current_country_timezone", "current_country_timezone_other", "province_territory", "province_territory_other", "county", "county_other"],
     6: [],
   };
 
@@ -581,6 +590,7 @@ const OnboardingPage: React.FC = () => {
         last_name: data.last_name,
         full_name,
         personal_email: verified.email,
+        company_email: data.company_email || null,
         primary_phone: data.primary_phone || null,
         callable_phone: data.callable_phone || null,
         whatsapp_number: data.whatsapp_number || null,
@@ -709,6 +719,7 @@ const OnboardingPage: React.FC = () => {
       middle_name: "James",
       last_name: "Richardson",
       personal_email: verified.email,
+      company_email: "marketing-email@example.com",
       primary_phone: "+12025550123",
       callable_phone: "+12025550456",
       whatsapp_number: "+12025550678",
