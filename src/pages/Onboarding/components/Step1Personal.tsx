@@ -175,7 +175,7 @@ export const Step1Personal = ({
         </FormField>
       </div>
 
-      {/* Row 2: Last Name | Primary Country of Interest */}
+      {/* Row 2: Last Name | Email Address */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <FormField id="last_name" label="Last Name" required error={errors.last_name}>
           <Input
@@ -183,6 +183,28 @@ export const Step1Personal = ({
             {...register("last_name")}
             className="h-11 border-slate-200 focus:border-blue-500 focus:ring-0"
             placeholder="Last Name"
+          />
+        </FormField>
+        <FormField id="personal_email" label="Email Address" required error={errors.personal_email}>
+          <Input
+            id="personal_email"
+            type="email"
+            {...register("personal_email")}
+            className="h-11 border-slate-200 focus:border-blue-500 focus:ring-0"
+            placeholder="Email Address"
+          />
+        </FormField>
+      </div>
+
+      {/* Row 3: Job Application Email | Country */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <FormField id="company_email" label="Job Application email address (job marketing)" required error={errors.company_email}>
+          <Input
+            id="company_email"
+            type="email"
+            {...register("company_email")}
+            className="h-11 border-slate-200 focus:border-blue-500 focus:ring-0"
+            placeholder="Job Application email address"
           />
         </FormField>
         <div className={`grid gap-6 ${selectedCountry === "Other" ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1"}`}>
@@ -227,17 +249,8 @@ export const Step1Personal = ({
         </div>
       </div>
 
-      {/* Row 3: Email Address | Date of Birth */}
+      {/* Row 4: Date of Birth */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <FormField id="personal_email" label="Email Address" required error={errors.personal_email}>
-          <Input
-            id="personal_email"
-            type="email"
-            {...register("personal_email")}
-            className="h-11 border-slate-200 focus:border-blue-500 focus:ring-0"
-            placeholder="Email Address"
-          />
-        </FormField>
         <FormField
           id="date_of_birth"
           label={`Date of Birth (${selectedCountry === "United States" || selectedCountry === "USA" ? "MM-DD-YYYY" : "DD-MM-YYYY"})`}
