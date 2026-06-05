@@ -348,7 +348,6 @@ const OnboardingPage: React.FC = () => {
         if (parsedData.last_name) setValue("last_name", parsedData.last_name, { shouldValidate: true });
         if (parsedData.personal_email) setValue("personal_email", parsedData.personal_email, { shouldValidate: true });
         if (parsedData.primary_phone) setValue("primary_phone", parsedData.primary_phone, { shouldValidate: true });
-        if (parsedData.full_address) setValue("full_address", parsedData.full_address, { shouldValidate: true });
         if (parsedData.linkedin_url) setValue("linkedin_url", parsedData.linkedin_url, { shouldValidate: true });
         if (parsedData.github_url) setValue("github_url", parsedData.github_url, { shouldValidate: true });
         if (parsedData.portfolio_url) setValue("portfolio_url", parsedData.portfolio_url, { shouldValidate: true });
