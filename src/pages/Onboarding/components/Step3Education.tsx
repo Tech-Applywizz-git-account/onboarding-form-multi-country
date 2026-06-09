@@ -350,7 +350,7 @@ export const Step3Education: React.FC<Step3Props> = ({
   }, [uniSearch, selectedCountry]);
 
   useEffect(() => {
-    if (locSearch.length < 1) {
+    if (locSearch.length < 4) {
       setLocSuggestions([]);
       return;
     }
@@ -360,7 +360,7 @@ export const Step3Education: React.FC<Step3Props> = ({
       // Filter unique location names
       setLocSuggestions(Array.from(new Set(results)));
       setLocLoading(false);
-    }, 400);
+    }, 1000);
     return () => clearTimeout(timer);
   }, [locSearch, selectedCountry]);
 
@@ -372,17 +372,35 @@ export const Step3Education: React.FC<Step3Props> = ({
     const timer = setTimeout(async () => {
       setCompLoading(true);
       const results = await fetchCompanies(compSearch);
-      // Filter unique company names
       setCompSuggestions(Array.from(new Set(results)));
       setCompLoading(false);
     }, 400);
+
     return () => clearTimeout(timer);
   }, [compSearch]);
+
+  // Default Work Preferences to All
+  useEffect(() => {
+    const current = watch("work_preferences");
+
+    if (!current || current.length === 0) {
+      setValue(
+        "work_preferences",
+        ["On-site", "Remote", "Hybrid"],
+        { shouldValidate: true }
+      );
+    }
+  }, [watch, setValue]);
 
   // Auto-append first job entry when experience > 0
   useEffect(() => {
     if (experience && experience !== "0" && fields.length === 0) {
-      append({ job_title: "", company_name: "", start_date: "", is_current: false });
+      append({
+        job_title: "",
+        company_name: "",
+        start_date: "",
+        is_current: false,
+      });
     }
   }, [experience, fields.length, append]);
 
@@ -645,8 +663,11 @@ export const Step3Education: React.FC<Step3Props> = ({
           <MultiSelect
             label="Work Preferences *"
             options={["All", "On-site", "Remote", "Hybrid"].map(o => ({ label: o, value: o }))}
-            selected={workPrefs}
-            onSelectionChange={(arr) => {
+            selected={
+              workPrefs.length === 3
+                ? ["All", ...workPrefs]
+                : workPrefs
+            } onSelectionChange={(arr) => {
               if (arr.includes("All")) {
                 setValue("work_preferences", ["On-site", "Remote", "Hybrid"], { shouldValidate: true });
               } else {

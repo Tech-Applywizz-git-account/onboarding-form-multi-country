@@ -91,6 +91,21 @@ export const Step1Personal = ({
   // Real-time Address States
   const [suggestions, setSuggestions] = useState<AddressSuggestion[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [isManualAddress, setIsManualAddress] = useState(false);
+
+  const enableManualAddress = () => {
+    setIsManualAddress(true);
+    if (addressValue && !fullAddress) {
+      setValue("full_address", addressValue, { shouldValidate: true });
+    }
+  };
+
+  const disableManualAddress = () => {
+    setIsManualAddress(false);
+    if (fullAddress) {
+      setAddressValue(fullAddress);
+    }
+  };
 
   // Update visa type when country changes
   useEffect(() => {
@@ -309,57 +324,114 @@ export const Step1Personal = ({
       {/* Row 5: Full Address | Current Visa Type */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <FormField id="full_address" label={`${displayCountryName || "Current"} Address`} required error={errors.full_address}>
-          <Popover open={addressOpen} onOpenChange={setAddressOpen}>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                role="combobox"
-                disabled={!selectedCountry}
-                className="w-full justify-between border-slate-200 focus:border-blue-500 hover:bg-white font-normal text-left h-11 px-3 whitespace-normal"
-              >
-                <span className="truncate">{fullAddress || (selectedCountry ? "Type to search address..." : "Select country first")}</span>
-                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
-              <Command shouldFilter={false}>
-                <CommandInput
-                  placeholder="Search address..."
-                  value={addressValue}
-                  onValueChange={setAddressValue}
-                />
-                <CommandEmpty>
-                  {isSearching ? (
-                    <div className="flex items-center justify-center p-4 text-xs">
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                      Searching...
-                    </div>
-                  ) : (
-                    <div className="p-4 text-sm text-slate-500">
-                      {addressValue.length < 3 ? "Type 3+ characters" : "No results found"}
-                    </div>
-                  )}
-                </CommandEmpty>
-                <CommandGroup className="max-h-64 overflow-auto">
-                  {suggestions.map((suggestion, idx) => (
-                    <CommandItem
-                      key={idx}
-                      value={suggestion.display_name}
-                      onSelect={() => {
-                        setValue("full_address", suggestion.display_name, { shouldValidate: true });
-                        setAddressValue(suggestion.display_name);
-                        setAddressOpen(false);
-                      }}
-                      className="text-sm py-3"
-                    >
-                      <Check className={cn("mr-2 h-4 w-4", fullAddress === suggestion.display_name ? "opacity-100" : "opacity-0")} />
-                      {suggestion.display_name}
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              </Command>
-            </PopoverContent>
-          </Popover>
+          {isManualAddress ? (
+            <div className="space-y-2">
+              <Input
+                id="full_address"
+                {...register("full_address")}
+                placeholder="Enter address manually..."
+                className="h-11 border-slate-200 focus:border-blue-500 focus:ring-0"
+              />
+              <div className="flex justify-end">
+                <Button
+                  type="button"
+                  variant="link"
+                  size="sm"
+                  onClick={disableManualAddress}
+                  className="text-xs text-blue-600 hover:text-blue-700 h-auto p-0 font-medium"
+                >
+                  Search address instead
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <Popover open={addressOpen} onOpenChange={setAddressOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    disabled={!selectedCountry}
+                    className="w-full justify-between border-slate-200 focus:border-blue-500 hover:bg-white font-normal text-left h-11 px-3 whitespace-normal"
+                  >
+                    <span className="truncate">{fullAddress || (selectedCountry ? "Type to search address..." : "Select country first")}</span>
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                  <Command shouldFilter={false}>
+                    <CommandInput
+                      placeholder="Search address..."
+                      value={addressValue}
+                      onValueChange={setAddressValue}
+                    />
+                    <CommandGroup className="max-h-64 overflow-auto">
+                      {isSearching ? (
+                        <div className="flex items-center justify-center p-4 text-xs text-slate-500">
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                          Searching...
+                        </div>
+                      ) : addressValue.trim().length > 0 && suggestions.length === 0 ? (
+                        <div className="p-3 text-xs text-slate-500 italic">
+                          No matching addresses found. You can enter manually below or select the option to use exactly what you typed.
+                        </div>
+                      ) : addressValue.trim().length === 0 ? (
+                        <div className="p-4 text-sm text-slate-500">
+                          {selectedCountry ? "Type to search address..." : "Select country first"}
+                        </div>
+                      ) : null}
+
+                      {addressValue && addressValue.trim().length > 0 && (
+                        <CommandItem
+                          value={addressValue}
+                          onSelect={() => {
+                            setValue("full_address", addressValue, { shouldValidate: true });
+                            setAddressOpen(false);
+                          }}
+                          className="text-sm py-3 font-semibold text-blue-600 hover:text-blue-700 bg-blue-50/50 hover:bg-blue-50 cursor-pointer"
+                        >
+                          <Check className={cn("mr-2 h-4 w-4", fullAddress === addressValue ? "opacity-100" : "opacity-0")} />
+                          Use: "{addressValue}"
+                        </CommandItem>
+                      )}
+
+                      {!isSearching && suggestions.map((suggestion, idx) => (
+                        <CommandItem
+                          key={idx}
+                          value={suggestion.display_name}
+                          onSelect={() => {
+                            setValue("full_address", suggestion.display_name, { shouldValidate: true });
+                            setAddressValue(suggestion.display_name);
+                            setAddressOpen(false);
+                          }}
+                          className="text-sm py-3 cursor-pointer"
+                        >
+                          <Check className={cn("mr-2 h-4 w-4", fullAddress === suggestion.display_name ? "opacity-100" : "opacity-0")} />
+                          {suggestion.display_name}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+              <div className="flex justify-between items-center px-1">
+                <span className="text-xs text-slate-400">
+                  {selectedCountry ? "Type 3+ characters to search" : "Select country first"}
+                </span>
+                {selectedCountry && (
+                  <Button
+                    type="button"
+                    variant="link"
+                    size="sm"
+                    onClick={enableManualAddress}
+                    className="text-xs text-blue-600 hover:text-blue-700 h-auto p-0 font-medium"
+                  >
+                    Can't find address? Enter manually
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
         </FormField>
 
         <FormField id="visatype" label={`Current ${displayCountryName || "Country"} Visa Type`} required error={errors.visatype}>
