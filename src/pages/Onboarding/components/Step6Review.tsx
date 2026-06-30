@@ -1,13 +1,23 @@
-import React from "react";
-import { UseFormWatch } from "react-hook-form";
+import React, { useState } from "react";
+import { UseFormWatch, UseFormSetValue } from "react-hook-form";
+import { CheckCircle2 } from "lucide-react";
 import { FormVals } from "../schema";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 interface Step6Props {
   watch: UseFormWatch<FormVals>;
   setStep: (step: number) => void;
   resumeFile: File | null;
   coverLetterFile: File | null;
+  setValue: UseFormSetValue<FormVals>;
 }
 
 const ReviewSection: React.FC<{
@@ -47,8 +57,10 @@ export const Step6Review: React.FC<Step6Props> = ({
   setStep,
   resumeFile,
   coverLetterFile,
+  setValue,
 }) => {
   const data = watch();
+  const [isTermsOpen, setIsTermsOpen] = useState(false);
 
   return (
     <div className="space-y-8 pb-10">
@@ -64,7 +76,7 @@ export const Step6Review: React.FC<Step6Props> = ({
         <ReviewItem label="Middle Name" value={data.middle_name} />
         <ReviewItem label="Last Name" value={data.last_name} />
         <ReviewItem label="Personal Email" value={data.personal_email} />
-        <ReviewItem label="Job Application Email (Job Marketing)" value={data.company_email} />
+        <ReviewItem label="Job Application Email" value={data.company_email} />
         <ReviewItem label="Primary Phone" value={data.primary_phone} />
         <ReviewItem label="WhatsApp Number" value={data.whatsapp_number} />
         <ReviewItem label="Date of Birth" value={data.date_of_birth} />
@@ -101,7 +113,8 @@ export const Step6Review: React.FC<Step6Props> = ({
         <ReviewItem label="Employment Status" value={data.employment_status} />
         <ReviewItem label="Notice Period" value={data.notice_period} />
         <ReviewItem label="Desired Start Date" value={data.desired_start_date} />
-        <ReviewItem label="Salary Expectations" value={`${data.salary_currency} ${data.salary_expectations}`} fullWidth />
+        <ReviewItem label="Salary Expectations (Yearly)" value={`${data.salary_currency} ${data.salary_expectations_yearly}`} />
+        <ReviewItem label="Salary Expectations (Hourly)" value={`${data.salary_currency} ${data.salary_expectations_hourly}`} />
         <ReviewItem label="Work Preferences" value={data.work_preferences?.join(", ")} fullWidth />
         <ReviewItem 
           label="Job Role Preferences" 
@@ -169,7 +182,6 @@ export const Step6Review: React.FC<Step6Props> = ({
         )}
         <ReviewItem label="County" value={data.county === "Other" ? `Other - ${data.county_other}` : data.county} />
         <ReviewItem label="Religion" value={data.religion === "Other" ? `Other - ${data.religion_other}` : data.religion} />
-        <ReviewItem label="Financial Industry Licenses?" value={data.financial_licenses === "yes" ? "Yes" : "No"} />
 
         {(data.zip_or_country === "United States" || (!["Canada", "United Kingdom", "Ireland"].includes(data.zip_or_country || ""))) && (
           <>
@@ -187,6 +199,74 @@ export const Step6Review: React.FC<Step6Props> = ({
         </div>
         <ReviewItem label="Disability Status" value={data.disability_status} />
       </ReviewSection>
+
+      <div className="mt-8 border-t border-slate-200 pt-6">
+        {watch("terms_accepted") ? (
+          <div className="flex items-center space-x-3 text-green-700 bg-green-50 p-4 rounded-xl border border-green-200 animate-in fade-in">
+            <CheckCircle2 className="h-6 w-6 shrink-0" />
+            <span className="text-sm font-medium">
+              You have read, understood, and agreed to the Terms & Conditions, and authorized ApplyWizz to process your information.
+            </span>
+          </div>
+        ) : (
+          <div className="flex items-start space-x-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
+            <Checkbox 
+              id="terms_accepted" 
+              checked={watch("terms_accepted")}
+              onCheckedChange={(checked) => setValue("terms_accepted", checked === true)}
+              className="mt-1"
+            />
+            <div className="space-y-1 leading-none">
+              <label
+                htmlFor="terms_accepted"
+                className="text-sm font-medium leading-relaxed peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-slate-700"
+              >
+                I have read, understood, and agree to the{" "}
+                <Dialog open={isTermsOpen} onOpenChange={setIsTermsOpen}>
+                  <DialogTrigger onClick={(e) => { e.preventDefault(); setIsTermsOpen(true); }} className="text-blue-600 font-bold hover:underline">
+                    Terms & Conditions
+                  </DialogTrigger>
+                  <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto p-0">
+                    <DialogHeader className="px-6 py-4 border-b border-slate-100 bg-slate-50 sticky top-0 z-10">
+                      <DialogTitle className="text-lg font-bold text-slate-800">Terms & Conditions</DialogTitle>
+                    </DialogHeader>
+                    <div className="px-6 py-4 text-[12px] text-slate-600 space-y-4">
+                      <p className="font-medium text-slate-700">By proceeding with this onboarding form, you acknowledge and agree to the following:</p>
+                      <ul className="list-disc pl-5 space-y-2">
+                        <li>I confirm that all information, documents, resume(s), employment history, educational qualifications, visa details, work authorization, and contact information provided by me are accurate, complete, and up to date.</li>
+                        <li>I authorize ApplyWizz to use the information and documents submitted through this onboarding form to identify suitable job opportunities and submit job applications on my behalf through authorized employer career portals, recruitment platforms, and other approved hiring channels.</li>
+                        <li>I understand that ApplyWizz provides job application assistance, resume optimization, LinkedIn branding, and career support services only. ApplyWizz does not guarantee interviews, job offers, employment, salary, visa sponsorship, or any specific hiring outcome.</li>
+                        <li>I authorize ApplyWizz to optimize, format, tailor, or reorganize my resume and application responses to improve readability and align them with specific job requirements without misrepresenting my qualifications, experience, or professional background.</li>
+                        <li>I understand that ApplyWizz may use AI-powered tools and automation to assist with resume optimization, job matching, and job application services while maintaining the accuracy of my profile and information. All outputs are subject to human review and service processes where applicable.</li>
+                        <li>I agree to promptly notify ApplyWizz if there are any changes to my employment status, work authorization, visa status, resume, contact details, or any other information that may impact my job applications.</li>
+                        <li>I understand that timely submission of requested documents, information, approvals, and responses is my responsibility. Any delay from my end may impact the efficiency and effectiveness of the services provided.</li>
+                        <li>I understand that interview invitations, interview scheduling, hiring decisions, salary negotiations, and employment offers are solely at the discretion of the respective employers. ApplyWizz has no control over these decisions.</li>
+                        <li>I acknowledge that the success of my job search depends on several external factors, including employer requirements, market demand, my qualifications, experience, interview performance, and overall competitiveness.</li>
+                        <li>I understand that providing false, misleading, incomplete, or fraudulent information may result in the suspension or termination of the services without prior notice.</li>
+                        <li>I authorize ApplyWizz to securely store, process, and use my personal information solely for providing job application assistance and career support services in accordance with its Privacy Policy.</li>
+                        <li>I understand that while ApplyWizz follows reasonable industry-standard security practices to protect my information, no online platform can guarantee absolute security of electronic data.</li>
+                        <li>I agree not to use ApplyWizz's services for any unlawful, fraudulent, or unauthorized purpose.</li>
+                        <li>I understand that subscription fees, renewals, cancellations, and refunds are governed by ApplyWizz's applicable Subscription, Billing, Cancellation, and Refund Policies.</li>
+                        <li>I authorize ApplyWizz to contact me via email, phone calls, SMS, WhatsApp, or other messaging platforms regarding job applications, interviews, profile updates, subscription-related information, and other service communications.</li>
+                        <li>I understand that ApplyWizz will make reasonable efforts to avoid duplicate job applications. I also agree to promptly inform ApplyWizz if I have independently applied for any position that may overlap with applications being managed on my behalf.</li>
+                        <li>I acknowledge that once ApplyWizz has commenced providing the subscribed services, the applicable fees shall be non-refundable except where required under applicable law or as specified in ApplyWizz's Refund Policy.</li>
+                      </ul>
+                      <p className="pt-2 font-medium">By clicking "I Agree" below, I confirm that I have carefully read, understood, and agree to these Terms & Conditions.</p>
+                    </div>
+                    <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 sticky bottom-0 z-10 flex justify-end gap-3">
+                      <Button variant="outline" onClick={() => setIsTermsOpen(false)}>Cancel</Button>
+                      <Button className="bg-blue-600 hover:bg-blue-700 text-white px-8" onClick={() => { setValue("terms_accepted", true, { shouldValidate: true }); setIsTermsOpen(false); }}>
+                        I Agree
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+                {" "}and authorize ApplyWizz to process my information for the purpose of providing job application assistance and career support services.
+              </label>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

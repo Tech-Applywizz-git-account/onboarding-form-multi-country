@@ -16,8 +16,8 @@ interface FileDropzoneProps {
 
 const FileDropzone: React.FC<FileDropzoneProps> = ({
   onFileSelect,
-  accept = '.pdf',
-  maxSize = 20 * 1024 * 1024, // 20MB default
+  accept = '.pdf,.doc,.docx,.rtf,.txt',
+  maxSize = 10 * 1024 * 1024, // 10MB default
   label,
   className,
   error,
@@ -32,6 +32,10 @@ const FileDropzone: React.FC<FileDropzoneProps> = ({
     if (!initialFile) setUploadError('');
   }, [initialFile]);
 
+  const allowedExtensionsText = React.useMemo(() => {
+    return accept.replace(/\./g, '').toUpperCase().split(',').map(s => s.trim()).join(', ');
+  }, [accept]);
+
   const onDrop = useCallback((acceptedFiles: File[], rejectedFiles: any[]) => {
     setUploadError('');
 
@@ -40,7 +44,7 @@ const FileDropzone: React.FC<FileDropzoneProps> = ({
       if (rejection.errors[0]?.code === 'file-too-large') {
         setUploadError(`File size must be less than ${Math.round(maxSize / 1024 / 1024)}MB`);
       } else if (rejection.errors[0]?.code === 'file-invalid-type') {
-        setUploadError('Only PDF files are allowed');
+        setUploadError(`Only ${allowedExtensionsText} files are allowed`);
       } else {
         setUploadError('Invalid file');
       }
@@ -52,11 +56,27 @@ const FileDropzone: React.FC<FileDropzoneProps> = ({
       setSelectedFile(file);
       onFileSelect(file);
     }
-  }, [maxSize, onFileSelect]);
+  }, [maxSize, onFileSelect, allowedExtensionsText]);
+
+  const dropzoneAccept = React.useMemo(() => {
+    return accept.split(',').reduce((acc, curr) => {
+      const ext = curr.trim().toLowerCase();
+      let mime = 'application/octet-stream';
+      if (ext === '.pdf') mime = 'application/pdf';
+      else if (ext === '.doc') mime = 'application/msword';
+      else if (ext === '.docx') mime = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+      else if (ext === '.rtf') mime = 'application/rtf';
+      else if (ext === '.txt') mime = 'text/plain';
+      
+      if (!acc[mime]) acc[mime] = [];
+      acc[mime].push(ext);
+      return acc;
+    }, {} as Record<string, string[]>);
+  }, [accept]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    accept: { 'application/pdf': ['.pdf'] },
+    accept: dropzoneAccept,
     maxSize,
     multiple: false
   });
@@ -96,10 +116,10 @@ const FileDropzone: React.FC<FileDropzoneProps> = ({
             )} />
             <div className="text-center">
               <p className="text-sm text-foreground">
-                {isDragActive ? 'Drop the PDF here' : 'Click to upload or drag and drop'}
+                {isDragActive ? 'Drop the file here' : 'Click to upload or drag and drop'}
               </p>
               <p className="text-xs text-muted-foreground mt-1">
-                PDF only, max {Math.round(maxSize / 1024 / 1024)}MB
+                {allowedExtensionsText} only, max {Math.round(maxSize / 1024 / 1024)}MB
               </p>
             </div>
           </div>

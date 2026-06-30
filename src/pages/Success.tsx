@@ -1,7 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
-import { CheckCircle, Mail, Calendar, ArrowLeft, Sparkles } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { CheckCircle, Mail, Calendar, Sparkles } from 'lucide-react';
 import successIcon from '@/assets/success-icon.png';
 
 const Success: React.FC = () => {
@@ -93,15 +91,7 @@ const Success: React.FC = () => {
             </ul>
           </div>
 
-          {/* Action Button */}
-          <div className="pt-4">
-            <Button asChild className="btn-primary w-full">
-              <Link to="/">
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Return to Home
-              </Link>
-            </Button>
-          </div>
+
 
           {/* Contact Info */}
           <div className="pt-4 border-t border-border">

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { UseFormRegister, FieldErrors, UseFormWatch, UseFormSetValue, useFieldArray, Control } from "react-hook-form";
+import { UseFormRegister, FieldErrors, UseFormWatch, UseFormSetValue, useFieldArray, Control, Controller } from "react-hook-form";
 import { FormVals } from "../schema";
 import { Input } from "@/components/ui/input";
 import {
@@ -24,8 +24,11 @@ import {
   Plus,
   Trash2,
   GraduationCap,
-  Briefcase
+  Briefcase,
+  Calendar as CalendarIcon
 } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { format } from "date-fns";
 import {
   Command,
   CommandEmpty,
@@ -68,6 +71,7 @@ interface EmploymentHistoryRowProps {
   register: any;
   watch: any;
   setValue: any;
+  control: any;
   remove: (index: number) => void;
   selectedCountry: string | undefined;
   jobRoleOptions: any[];
@@ -81,6 +85,7 @@ const EmploymentHistoryRow: React.FC<EmploymentHistoryRowProps> = ({
   register,
   watch,
   setValue,
+  control,
   remove,
   selectedCountry,
   jobRoleOptions,
@@ -88,35 +93,6 @@ const EmploymentHistoryRow: React.FC<EmploymentHistoryRowProps> = ({
   alternateRolesOptions,
   errors,
 }) => {
-  const [jobSearch, setJobSearch] = useState("");
-  const [jobOpen, setJobOpen] = useState(false);
-  const [compSearch, setCompSearch] = useState("");
-  const [compSuggestions, setCompSuggestions] = useState<string[]>([]);
-  const [compLoading, setCompLoading] = useState(false);
-  const [compOpen, setCompOpen] = useState(false);
-
-  const jobTitle = watch(`employment_history.${index}.job_title`);
-  const companyName = watch(`employment_history.${index}.company_name`);
-
-  // Company Search Logic
-  useEffect(() => {
-    if (compSearch.length < 1) {
-      setCompSuggestions([]);
-      return;
-    }
-    const timer = setTimeout(async () => {
-      setCompLoading(true);
-      const results = await fetchCompanies(compSearch);
-      setCompSuggestions(Array.from(new Set(results)));
-      setCompLoading(false);
-    }, 400);
-    return () => clearTimeout(timer);
-  }, [compSearch]);
-
-  const allJobOptions = Array.from(new Set([
-    ...(jobRolesData.length > 0 ? jobRolesData.map(o => "name" in o ? o.name : o.value) : jobRoleOptions.map(o => o.value)),
-    ...alternateRolesOptions
-  ]));
 
   return (
     <div className="p-5 border border-slate-200 rounded-xl bg-slate-50/50 space-y-4 relative animate-in fade-in zoom-in-95">
@@ -131,135 +107,103 @@ const EmploymentHistoryRow: React.FC<EmploymentHistoryRowProps> = ({
       </Button>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Job Title with Suggestions */}
+        {/* Job Title */}
         <FormField
           id={`employment_history.${index}.job_title` as any}
           label="Job Title"
           required
           error={(errors.employment_history as any)?.[index]?.job_title}
         >
-          <Popover open={jobOpen} onOpenChange={setJobOpen}>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className="w-full justify-between h-11 border-slate-200 bg-white hover:bg-slate-50 font-normal text-left"
-              >
-                <span className="truncate">{jobTitle || "Select or type job title..."}</span>
-                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
-              <Command>
-                <CommandInput placeholder="Search job title..." value={jobSearch} onValueChange={setJobSearch} />
-                <CommandGroup className="max-h-60 overflow-auto">
-                  {allJobOptions.map((val: string) => (
-                    <CommandItem
-                      key={val}
-                      onSelect={() => {
-                        setValue(`employment_history.${index}.job_title`, val, { shouldValidate: true });
-                        setJobOpen(false);
-                      }}
-                    >
-                      <Check className={cn("mr-2 h-4 w-4", jobTitle === val ? "opacity-100" : "opacity-0")} />
-                      {val}
-                    </CommandItem>
-                  ))}
-                  <CommandItem
-                    onSelect={() => {
-                      const val = prompt("Enter job title:");
-                      if (val) setValue(`employment_history.${index}.job_title`, val, { shouldValidate: true });
-                      setJobOpen(false);
-                    }}
-                  >
-                    <Plus className="mr-2 h-4 w-4" />
-                    Other (Type manually)
-                  </CommandItem>
-                </CommandGroup>
-              </Command>
-            </PopoverContent>
-          </Popover>
+          <Controller
+            name={`employment_history.${index}.job_title` as any}
+            control={control}
+            render={({ field }) => (
+              <Input
+                {...field}
+                value={field.value || ""}
+                placeholder="Enter job title"
+                className="h-11 border-slate-200 bg-white"
+              />
+            )}
+          />
         </FormField>
 
-        {/* Company Name with Search & Add */}
+        {/* Company Name */}
         <FormField
           id={`employment_history.${index}.company_name` as any}
           label="Company Name"
           required
           error={(errors.employment_history as any)?.[index]?.company_name}
         >
-          <Popover open={compOpen} onOpenChange={setCompOpen}>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className="w-full justify-between h-11 border-slate-200 bg-white hover:bg-slate-50 font-normal text-left"
-              >
-                <span className="truncate">{companyName || "Search or type company..."}</span>
-                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
-              <Command shouldFilter={false}>
-                <CommandInput placeholder="Search company..." value={compSearch} onValueChange={setCompSearch} />
-                <CommandEmpty>
-                  {compLoading ? (
-                    <div className="flex items-center justify-center p-4">
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                      Searching...
-                    </div>
-                  ) : (
-                    "No companies found."
-                  )}
-                </CommandEmpty>
-                <CommandGroup className="max-h-60 overflow-auto">
-                  {compSuggestions.map((comp) => (
-                    <CommandItem
-                      key={comp}
-                      onSelect={() => {
-                        setValue(`employment_history.${index}.company_name`, comp, { shouldValidate: true });
-                        setCompOpen(false);
-                      }}
-                    >
-                      <Check className={cn("mr-2 h-4 w-4", companyName === comp ? "opacity-100" : "opacity-0")} />
-                      {comp}
-                    </CommandItem>
-                  ))}
-                  <CommandItem
-                    onSelect={() => {
-                      const val = prompt("Enter company name:");
-                      if (val) setValue(`employment_history.${index}.company_name`, val, { shouldValidate: true });
-                      setCompOpen(false);
-                    }}
-                  >
-                    <Plus className="mr-2 h-4 w-4" />
-                    Add Custom Company
-                  </CommandItem>
-                </CommandGroup>
-              </Command>
-            </PopoverContent>
-          </Popover>
+          <Controller
+            name={`employment_history.${index}.company_name` as any}
+            control={control}
+            render={({ field }) => (
+              <Input
+                {...field}
+                value={field.value || ""}
+                placeholder="Enter company name"
+                className="h-11 border-slate-200 bg-white"
+              />
+            )}
+          />
         </FormField>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <FormField
           id={`employment_history.${index}.start_date` as any}
-          label="Start Date"
+          label="Start Date (MM/YYYY)"
           required
           error={(errors.employment_history as any)?.[index]?.start_date}
         >
-          <Input type="date" {...register(`employment_history.${index}.start_date` as any)} className="h-11 border-slate-200 bg-white" />
+          <Controller
+            name={`employment_history.${index}.start_date` as any}
+            control={control}
+            render={({ field: { onChange, value } }) => (
+              <Input
+                type="text"
+                placeholder="MM/YYYY"
+                value={value || ""}
+                onChange={(e) => {
+                  const digits = e.target.value.replace(/\D/g, "").slice(0, 6);
+                  let formatted = digits;
+                  if (digits.length > 2) {
+                    formatted = `${digits.slice(0, 2)}/${digits.slice(2)}`;
+                  }
+                  onChange(formatted);
+                }}
+                className="h-11 border-slate-200 bg-white"
+              />
+            )}
+          />
         </FormField>
         <FormField
           id={`employment_history.${index}.end_date` as any}
-          label="End Date"
+          label="End Date (MM/YYYY)"
           required={!watch(`employment_history.${index}.is_current` as any)}
           error={(errors.employment_history as any)?.[index]?.end_date}
         >
-          <Input
-            type="date"
-            {...register(`employment_history.${index}.end_date` as any)}
-            className="h-11 border-slate-200 bg-white"
-            disabled={watch(`employment_history.${index}.is_current` as any)}
+          <Controller
+            name={`employment_history.${index}.end_date` as any}
+            control={control}
+            render={({ field: { onChange, value } }) => (
+              <Input
+                type="text"
+                placeholder="MM/YYYY"
+                value={value || ""}
+                disabled={watch(`employment_history.${index}.is_current` as any)}
+                onChange={(e) => {
+                  const digits = e.target.value.replace(/\D/g, "").slice(0, 6);
+                  let formatted = digits;
+                  if (digits.length > 2) {
+                    formatted = `${digits.slice(0, 2)}/${digits.slice(2)}`;
+                  }
+                  onChange(formatted);
+                }}
+                className="h-11 border-slate-200 bg-white"
+              />
+            )}
           />
         </FormField>
       </div>
@@ -268,7 +212,12 @@ const EmploymentHistoryRow: React.FC<EmploymentHistoryRowProps> = ({
         <Checkbox
           id={`current_${index}`}
           checked={watch(`employment_history.${index}.is_current` as any)}
-          onCheckedChange={(v) => setValue(`employment_history.${index}.is_current` as any, !!v)}
+          onCheckedChange={(v) => {
+            setValue(`employment_history.${index}.is_current` as any, !!v);
+            if (!!v) {
+              setValue(`employment_history.${index}.end_date` as any, "", { shouldValidate: true });
+            }
+          }}
         />
         <Label htmlFor={`current_${index}`} className="text-sm">I currently work here</Label>
       </div>
@@ -337,20 +286,34 @@ export const Step3Education: React.FC<Step3Props> = ({
   useEffect(() => {
     if (uniSearch.length < 1) {
       setUniSuggestions([]);
+      setUniLoading(false);
       return;
     }
+
+    // Phase 1: Show local results IMMEDIATELY — zero network delay
+    // Dynamic import is effectively instant after first call (module cached)
+    import("../universityData").then(({ searchUniversitiesLocally }) => {
+      const localNow = searchUniversitiesLocally(uniSearch, selectedCountry);
+      const localFallback = localNow.length === 0
+        ? searchUniversitiesLocally(uniSearch, undefined)
+        : localNow;
+      if (localFallback.length > 0) {
+        setUniSuggestions(Array.from(new Set(localFallback)).slice(0, 25));
+      }
+    });
+
+    // Phase 2: Fetch full API results (Hipolabs + cache) after debounce
     const timer = setTimeout(async () => {
       setUniLoading(true);
       const results = await fetchUniversities(uniSearch, selectedCountry);
-      // Filter unique university names
-      setUniSuggestions(Array.from(new Set(results)));
+      setUniSuggestions(Array.from(new Set(results)).slice(0, 25));
       setUniLoading(false);
-    }, 200);
+    }, 500);
     return () => clearTimeout(timer);
   }, [uniSearch, selectedCountry]);
 
   useEffect(() => {
-    if (locSearch.length < 4) {
+    if (locSearch.length < 1) {
       setLocSuggestions([]);
       return;
     }
@@ -360,7 +323,7 @@ export const Step3Education: React.FC<Step3Props> = ({
       // Filter unique location names
       setLocSuggestions(Array.from(new Set(results)));
       setLocLoading(false);
-    }, 1000);
+    }, 200);
     return () => clearTimeout(timer);
   }, [locSearch, selectedCountry]);
 
@@ -442,25 +405,29 @@ export const Step3Education: React.FC<Step3Props> = ({
             </PopoverTrigger>
             <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
               <Command shouldFilter={false}>
-                <CommandInput placeholder="Type university name..." value={uniSearch} onValueChange={setUniSearch} />
+                <CommandInput
+                  placeholder="Type university or college name..."
+                  value={uniSearch}
+                  onValueChange={setUniSearch}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && uniSuggestions.length > 0) {
+                      e.preventDefault();
+                      setValue("university_name", uniSuggestions[0], { shouldValidate: true });
+                      setUniOpen(false);
+                    }
+                  }}
+                />
+                {/* Show loading hint inside list while results are fetching */}
+                {uniLoading && (
+                  <div className="flex items-center gap-2 px-3 py-2 text-xs text-muted-foreground border-b">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    Searching universities...
+                  </div>
+                )}
                 <CommandEmpty>
-                  {uniLoading ? (
-                    <div className="flex items-center justify-center p-4">
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                      Searching...
-                    </div>
-                  ) : (
-                    "No universities found."
-                  )}
+                  {uniLoading ? null : "No universities found. Type more or use manual entry below."}
                 </CommandEmpty>
-                <CommandGroup className="max-h-60 overflow-auto">
-                  <CommandItem onSelect={() => {
-                    setValue("university_name", uniSearch, { shouldValidate: true });
-                    setUniOpen(false);
-                  }}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Use "{uniSearch || "manual entry"}"
-                  </CommandItem>
+                <CommandGroup className="max-h-80 overflow-auto">
                   {uniSuggestions.map((uni) => (
                     <CommandItem
                       key={uni}
@@ -473,6 +440,19 @@ export const Step3Education: React.FC<Step3Props> = ({
                       {uni}
                     </CommandItem>
                   ))}
+                  {/* Manual entry always at the bottom */}
+                  {uniSearch && (
+                    <CommandItem
+                      onSelect={() => {
+                        setValue("university_name", uniSearch, { shouldValidate: true });
+                        setUniOpen(false);
+                      }}
+                      className="text-muted-foreground italic border-t mt-1"
+                    >
+                      <Plus className="mr-2 h-4 w-4" />
+                      Use "{uniSearch}" (manual entry)
+                    </CommandItem>
+                  )}
                 </CommandGroup>
               </Command>
             </PopoverContent>
@@ -578,25 +558,98 @@ export const Step3Education: React.FC<Step3Props> = ({
           )}
         </div>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <FormField id="desired_start_date" label={`Desired joining date if you got selected in any ${displayCountryName || "Country"} company`} required error={errors.desired_start_date}>
-          <Input type="date" {...register("desired_start_date")} className="h-11 border-slate-200 focus:border-blue-500 focus:ring-0" />
-        </FormField>
 
-        <FormField id="salary_currency" label="Preferred Currency" required error={errors.salary_currency}>
-          <Select
-            value={selectedCurrency || ""}
-            onValueChange={(v) => setValue("salary_currency", v, { shouldValidate: true })}
-          >
-            <SelectTrigger className="h-11 border-slate-200 focus:border-blue-500 focus:ring-0 bg-white">
-              <SelectValue placeholder="Select Currency" />
-            </SelectTrigger>
-            <SelectContent>
-              {CURRENCY_OPTIONS.map(curr => (
-                <SelectItem key={curr.value} value={curr.value}>{curr.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <FormField
+          id="desired_start_date"
+          label={`Desired joining date if you got selected in any ${displayCountryName || "Country"} company`}
+          required
+          error={errors.desired_start_date}
+        >
+          <Controller
+            name="desired_start_date"
+            control={control}
+            render={({ field: { onChange, value } }) => {
+              const getParsedDate = (val: string) => {
+                if (!val) return undefined;
+                const parts = val.split("/");
+                if (parts.length !== 3) return undefined;
+                const month = parseInt(parts[0], 10);
+                const day = parseInt(parts[1], 10);
+                let year = parseInt(parts[2], 10);
+                if (isNaN(month) || isNaN(day) || isNaN(year)) return undefined;
+                
+                const currentYear = new Date().getFullYear();
+                const currentCentury = Math.floor(currentYear / 100) * 100;
+                const twoDigitCutoff = currentYear % 100;
+                
+                if (year < 100) {
+                  if (year <= twoDigitCutoff) {
+                    year += currentCentury;
+                  } else {
+                    year += (currentCentury - 100);
+                  }
+                }
+                return new Date(year, month - 1, day);
+              };
+
+              const selectedDate = getParsedDate(value);
+
+              const handleInputChange = (val: string) => {
+                // Strip non-digits and limit to 6 digits
+                const digits = val.replace(/\D/g, "").slice(0, 6);
+                let formatted = digits;
+                if (digits.length > 2) {
+                  formatted = `${digits.slice(0, 2)}/${digits.slice(2)}`;
+                }
+                if (digits.length > 4) {
+                  formatted = `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4, 6)}`;
+                }
+                onChange(formatted);
+              };
+
+              return (
+                <div className="relative flex items-center">
+                  <Input
+                    type="text"
+                    placeholder="MM/DD/YY"
+                    value={value || ""}
+                    onChange={(e) => handleInputChange(e.target.value)}
+                    className="w-full h-11 pr-11 border-slate-200 focus:border-blue-500 focus:ring-0 bg-white"
+                  />
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-1 top-1/2 -translate-y-1/2 h-9 w-9 text-slate-400 hover:text-slate-600 focus:ring-0"
+                      >
+                        <CalendarIcon className="h-4 w-4" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={selectedDate}
+                        onSelect={(date) => {
+                          if (date) {
+                            onChange(format(date, "MM/dd/yy"));
+                          } else {
+                            onChange("");
+                          }
+                        }}
+                        captionLayout="dropdown-buttons"
+                        fromYear={new Date().getFullYear() - 2}
+                        toYear={new Date().getFullYear() + 10}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              );
+            }}
+          />
         </FormField>
       </div>
 
@@ -604,17 +657,15 @@ export const Step3Education: React.FC<Step3Props> = ({
         <FormField
           id="salary_expectations_yearly"
           label={`Salary Expectation (yearly)`}
-          error={undefined}
+          required
+          error={errors.salary_expectations_yearly}
         >
           <Select
-            value={(watch("salary_expectations") || "").split(",").find(s => s.startsWith("Yearly:"))?.replace("Yearly:", "") || ""}
-            onValueChange={(v) => {
-              const current = (watch("salary_expectations") || "").split(",").filter(Boolean).filter(s => !s.startsWith("Yearly:"));
-              setValue("salary_expectations", v ? [...current, `Yearly:${v}`].join(",") : current.join(","), { shouldValidate: true });
-            }}
+            value={watch("salary_expectations_yearly") || ""}
+            onValueChange={(v) => setValue("salary_expectations_yearly", v, { shouldValidate: true })}
           >
             <SelectTrigger className="h-11 border-slate-200 focus:border-blue-500 focus:ring-0 bg-white">
-              <SelectValue placeholder={`In ${currencySymbol}`} />
+              <SelectValue placeholder={currencySymbol} />
             </SelectTrigger>
             <SelectContent>
               {(SALARY_RANGES[selectedCountry as string]?.Yearly || SALARY_RANGES["United States"].Yearly).map(r => (
@@ -627,21 +678,15 @@ export const Step3Education: React.FC<Step3Props> = ({
         <FormField
           id="salary_expectations_hourly"
           label={`Salary Expectation (${COUNTRY_DATA[selectedCountry as string]?.salary_types[1] || "Hourly"})`}
-          error={undefined}
+          required
+          error={errors.salary_expectations_hourly}
         >
           <Select
-            value={(watch("salary_expectations") || "").split(",").find(s => {
-              const type = COUNTRY_DATA[selectedCountry as string]?.salary_types[1] || "Hourly";
-              return s.startsWith(`${type}:`);
-            })?.split(":")[1] || ""}
-            onValueChange={(v) => {
-              const type = COUNTRY_DATA[selectedCountry as string]?.salary_types[1] || "Hourly";
-              const current = (watch("salary_expectations") || "").split(",").filter(Boolean).filter(s => !s.startsWith(`${type}:`));
-              setValue("salary_expectations", v ? [...current, `${type}:${v}`].join(",") : current.join(","), { shouldValidate: true });
-            }}
+            value={watch("salary_expectations_hourly") || ""}
+            onValueChange={(v) => setValue("salary_expectations_hourly", v, { shouldValidate: true })}
           >
             <SelectTrigger className="h-11 border-slate-200 focus:border-blue-500 focus:ring-0 bg-white">
-              <SelectValue placeholder={`In ${currencySymbol}`} />
+              <SelectValue placeholder={currencySymbol} />
             </SelectTrigger>
             <SelectContent>
               {(() => {
@@ -655,7 +700,6 @@ export const Step3Education: React.FC<Step3Props> = ({
             </SelectContent>
           </Select>
         </FormField>
-        {errors.salary_expectations && <p className="col-span-full text-sm text-destructive -mt-4">{errors.salary_expectations.message}</p>}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -667,11 +711,21 @@ export const Step3Education: React.FC<Step3Props> = ({
               workPrefs.length === 3
                 ? ["All", ...workPrefs]
                 : workPrefs
-            } onSelectionChange={(arr) => {
-              if (arr.includes("All")) {
+            }
+            onSelectionChange={(arr) => {
+              const wasAllSelected = workPrefs.length === 3;
+              const isAllClicked = arr.includes("All");
+
+              if (isAllClicked && !wasAllSelected) {
                 setValue("work_preferences", ["On-site", "Remote", "Hybrid"], { shouldValidate: true });
+              } else if (isAllClicked && wasAllSelected && arr.length < 4) {
+                const remaining = arr.filter(v => v !== "All");
+                setValue("work_preferences", remaining, { shouldValidate: true });
+              } else if (!isAllClicked && wasAllSelected) {
+                setValue("work_preferences", [], { shouldValidate: true });
               } else {
-                setValue("work_preferences", arr.filter(v => v !== "All"), { shouldValidate: true });
+                const nextPrefs = arr.filter(v => v !== "All");
+                setValue("work_preferences", nextPrefs, { shouldValidate: true });
               }
             }}
           />
@@ -680,18 +734,20 @@ export const Step3Education: React.FC<Step3Props> = ({
           )}
         </div>
 
-        <div className="space-y-2">
-          <MultiSelect
-            label="Location Preferences *"
-            placeholder={workPrefs.includes("Remote") ? "Search and select states/provinces..." : "Select 'Remote' to enable"}
-            options={workPrefs.includes("Remote") ? Array.from(new Set([...locations, ...locSuggestions])).map(city => ({ label: city, value: city })) : []}
-            selected={locations}
-            onSelectionChange={(arr) => setValue("location_preferences", arr, { shouldValidate: true })}
-            onSearchChange={workPrefs.includes("Remote") ? setLocSearch : undefined}
-            error={errors.location_preferences?.message}
-            disabled={!workPrefs.includes("Remote")}
-          />
-        </div>
+        {(workPrefs.includes("Remote") || workPrefs.includes("Hybrid")) && (
+          <div className="space-y-2">
+            <MultiSelect
+              label="Location Preferences *"
+              placeholder="Search and select cities..."
+              options={Array.from(new Set([...locations, ...locSuggestions])).map(city => ({ label: city, value: city }))}
+              selected={locations}
+              onSelectionChange={(arr) => setValue("location_preferences", arr, { shouldValidate: true })}
+              onSearchChange={setLocSearch}
+              error={errors.location_preferences?.message}
+              shouldFilter={false}
+            />
+          </div>
+        )}
       </div>
 
 
@@ -705,11 +761,22 @@ export const Step3Education: React.FC<Step3Props> = ({
               <SelectValue placeholder="Select Experience" />
             </SelectTrigger>
             <SelectContent>
-              {[...Array(51).keys()].map((i) => (
-                <SelectItem key={i} value={`${i}`}>
-                  {i} year{i !== 1 ? "s" : ""}
-                </SelectItem>
-              ))}
+              {[...Array(51).keys()].map((i) => {
+                const getExpLabel = (num: number) => {
+                  if (num === 0) return "0 years (Entry Level / Fresher)";
+                  if (num === 1) return "1 year (Junior)";
+                  if (num === 3) return "3 years (Mid-Level)";
+                  if (num === 5) return "5 years (Senior)";
+                  if (num === 10) return "10 years (Lead / Principal)";
+                  if (num === 15) return "15 years (Director / Executive)";
+                  return `${num} year${num !== 1 ? "s" : ""}`;
+                };
+                return (
+                  <SelectItem key={i} value={`${i}`}>
+                    {getExpLabel(i)}
+                  </SelectItem>
+                );
+              })}
             </SelectContent>
           </Select>
         </FormField>
@@ -854,6 +921,7 @@ export const Step3Education: React.FC<Step3Props> = ({
               register={register}
               watch={watch}
               setValue={setValue}
+              control={control}
               remove={remove}
               selectedCountry={selectedCountry}
               jobRoleOptions={jobRoleOptions}

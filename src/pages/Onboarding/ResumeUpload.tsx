@@ -115,7 +115,7 @@ const ResumeUpload: React.FC = () => {
                   <CloudUpload className="h-10 w-10 text-[#1F4096]/40 group-hover:text-[#1F4096] transition-all group-hover:scale-110 duration-300" />
                   {!resumeFile ? (
                     <div className="text-[#1F4096] font-bold text-sm tracking-tight flex items-center gap-2">
-                      BROWSE <span className="text-slate-400 font-normal text-xs">|</span> DROPBOX
+                      BROWSE FILE
                     </div>
                   ) : (
                     <div className="space-y-1">
@@ -152,13 +152,15 @@ const ResumeUpload: React.FC = () => {
             {/* Bottom Actions */}
             <div className="flex flex-col sm:flex-row justify-center md:justify-end items-center gap-3 mt-2 pt-4 border-t border-slate-100">
               {resumeFile && !isParsing && (
-                <Button
-                  variant="outline"
-                  onClick={() => setResumeFile(null)}
-                  className="text-xs font-bold border-2 border-[#1F4096] text-[#1F4096] hover:bg-[#1F4096] hover:text-white px-6 h-10 transition-all uppercase tracking-wider"
-                >
-                  RE-UPLOAD NEW FILE
-                </Button>
+                <>
+                  <Button
+                    variant="outline"
+                    onClick={() => setResumeFile(null)}
+                    className="text-xs font-bold border-2 border-[#1F4096] text-[#1F4096] hover:bg-[#1F4096] hover:text-white px-6 h-10 transition-all uppercase tracking-wider"
+                  >
+                    RE-UPLOAD NEW FILE
+                  </Button>
+                </>
               )}
               <Button
                 onClick={handleStartParsing}

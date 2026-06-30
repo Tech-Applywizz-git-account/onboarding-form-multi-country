@@ -5,7 +5,7 @@ import { FieldError } from "react-hook-form";
 
 interface FormFieldProps {
   id: string;
-  label: string;
+  label: React.ReactNode;
   required?: boolean;
   error?: FieldError;
   children: React.ReactNode;
@@ -24,8 +24,9 @@ export const FormField: React.FC<FormFieldProps> = ({
 }) => {
   return (
     <div className={`space-y-1.5 ${className}`}>
-      <Label htmlFor={id} className="text-sm font-medium">
-        {label} {required && <span className="text-red-600 ml-0.5">*</span>}
+      <Label htmlFor={id} className="text-sm font-medium flex items-center gap-1.5 flex-wrap">
+        <span>{label}</span>
+        {required && <span className="text-red-600 -ml-0.5">*</span>}
       </Label>
       {description && <p className="text-xs text-muted-foreground">{description}</p>}
       <div className="mt-1">

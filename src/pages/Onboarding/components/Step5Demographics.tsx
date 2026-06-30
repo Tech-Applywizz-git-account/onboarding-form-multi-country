@@ -56,6 +56,38 @@ export const Step5Demographics: React.FC<Step5Props> = ({
 
   const countyOptions = getCountyOptions();
 
+  const provinceTerritory = watch("province_territory");
+
+  React.useEffect(() => {
+    if (isUS && provinceTerritory && provinceTerritory !== "Other") {
+      const stateTzMap: Record<string, string> = {
+        "Connecticut": "USA (EST)", "Delaware": "USA (EST)", "Florida": "USA (EST)", "Georgia": "USA (EST)", "Indiana": "USA (EST)", "Maine": "USA (EST)", "Maryland": "USA (EST)", "Massachusetts": "USA (EST)", "Michigan": "USA (EST)", "New Hampshire": "USA (EST)", "New Jersey": "USA (EST)", "New York": "USA (EST)", "North Carolina": "USA (EST)", "Ohio": "USA (EST)", "Pennsylvania": "USA (EST)", "Rhode Island": "USA (EST)", "South Carolina": "USA (EST)", "Vermont": "USA (EST)", "Virginia": "USA (EST)", "West Virginia": "USA (EST)", "District of Columbia": "USA (EST)",
+        "Alabama": "USA (CST)", "Arkansas": "USA (CST)", "Illinois": "USA (CST)", "Iowa": "USA (CST)", "Kansas": "USA (CST)", "Kentucky": "USA (CST)", "Louisiana": "USA (CST)", "Minnesota": "USA (CST)", "Mississippi": "USA (CST)", "Missouri": "USA (CST)", "Nebraska": "USA (CST)", "North Dakota": "USA (CST)", "Oklahoma": "USA (CST)", "South Dakota": "USA (CST)", "Tennessee": "USA (CST)", "Texas": "USA (CST)", "Wisconsin": "USA (CST)",
+        "Arizona": "USA (MST)", "Colorado": "USA (MST)", "Idaho": "USA (MST)", "Montana": "USA (MST)", "New Mexico": "USA (MST)", "Utah": "USA (MST)", "Wyoming": "USA (MST)",
+        "California": "USA (PST)", "Nevada": "USA (PST)", "Oregon": "USA (PST)", "Washington": "USA (PST)",
+        "Alaska": "USA (PST)", "Hawaii": "Other" 
+      };
+      
+      const tz = stateTzMap[provinceTerritory];
+      if (tz) {
+        setValue("current_country_timezone", tz, { shouldValidate: true });
+      }
+    } else if (isCanada && provinceTerritory && provinceTerritory !== "Other") {
+      const provinceTzMap: Record<string, string> = {
+        "Ontario": "Canada (EST)", "Quebec": "Canada (EST)", "Nunavut": "Canada (EST)",
+        "Manitoba": "Canada (CST)", "Saskatchewan": "Canada (CST)",
+        "Alberta": "Canada (MST)", "Northwest Territories": "Canada (MST)",
+        "British Columbia": "Canada (PST)", "Yukon": "Canada (PST)",
+        "New Brunswick": "Other", "Nova Scotia": "Other", "Prince Edward Island": "Other", "Newfoundland and Labrador": "Other"
+      };
+      
+      const tz = provinceTzMap[provinceTerritory];
+      if (tz) {
+        setValue("current_country_timezone", tz, { shouldValidate: true });
+      }
+    }
+  }, [isUS, isCanada, provinceTerritory, setValue]);
+
   return (
     <div className="space-y-8">
       {/* Identity Section */}
@@ -287,16 +319,8 @@ export const Step5Demographics: React.FC<Step5Props> = ({
                 )}
               </div>
             )}
-          </div>
         </div>
-
-        <YesNoField
-          id="financial_licenses"
-          label="Do you currently hold or have you ever held any licenses or registrations relevant to the financial services industry?"
-          required
-          watch={watch}
-          setValue={setValue}
-        />
+        </div>
       </div>
 
       {/* EEO Section (Conditional for US) */}
