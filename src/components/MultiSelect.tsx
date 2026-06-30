@@ -168,6 +168,7 @@ interface MultiSelectProps {
   label?: string;
   error?: string;
   disabled?: boolean;
+  shouldFilter?: boolean;
 }
 
 const MultiSelect: React.FC<MultiSelectProps> = ({
@@ -180,12 +181,15 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
   label,
   error,
   disabled,
+  shouldFilter = true,
 }) => {
   const [open, setOpen] = useState(false);
   const [searchValue, setSearchValue] = useState('');
+  const [highlightedIndex, setHighlightedIndex] = useState(0);
 
   const handleSearchChange = (val: string) => {
     setSearchValue(val);
+    setHighlightedIndex(0); // reset highlight to first item on new search
     onSearchChange?.(val);
   };
 
@@ -200,13 +204,40 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
     onSelectionChange(selected.filter((item) => item !== value));
   };
 
-  const selectedOptions = options.filter((option) => selected.includes(option.value));
+  // Handle keyboard navigation: ArrowDown, ArrowUp, Enter
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!open || options.length === 0) return;
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setHighlightedIndex((prev) => (prev < options.length - 1 ? prev + 1 : 0));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setHighlightedIndex((prev) => (prev > 0 ? prev - 1 : options.length - 1));
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      const idx = highlightedIndex >= 0 && highlightedIndex < options.length
+        ? highlightedIndex
+        : 0; // fall back to first item if nothing explicitly highlighted
+      if (options[idx]) {
+        handleSelect(options[idx].value);
+        setSearchValue('');
+        setHighlightedIndex(0);
+        onSearchChange?.('');
+      }
+    }
+  };
+
+  let selectedOptions = options.filter((option) => selected.includes(option.value));
+  if (selected.includes("All")) {
+    selectedOptions = selectedOptions.filter(o => o.value === "All");
+  }
 
   return (
     <div className={cn('space-y-2', className)}>
       {label && <label className="text-sm font-medium text-foreground">{label}</label>}
 
-      <Popover open={open} onOpenChange={setOpen}>
+      <Popover open={open} onOpenChange={(o) => { setOpen(o); if (!o) setHighlightedIndex(0); }}>
         <PopoverTrigger asChild>
           <Button
             type="button" // important: prevent form submission
@@ -259,21 +290,30 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
         </PopoverTrigger>
 
         <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0 glass-card border-card-border" align="start">
-          <Command className="bg-transparent">
+          <Command className="bg-transparent" shouldFilter={shouldFilter}>
             <CommandInput
               placeholder="Search..."
               value={searchValue}
               onValueChange={handleSearchChange}
+              onKeyDown={handleKeyDown}
               className="border-none bg-transparent"
             />
             <CommandEmpty>No results found.</CommandEmpty>
             <CommandGroup className="max-h-64 overflow-auto">
-              {options.map((option) => (
+              {options.map((option, idx) => (
                 <CommandItem
                   key={option.value}
                   value={option.value}
-                  onSelect={() => handleSelect(option.value)}
-                  className="cursor-pointer text-gray-900"
+                  onSelect={() => {
+                    handleSelect(option.value);
+                    setSearchValue('');
+                    setHighlightedIndex(0);
+                    onSearchChange?.('');
+                  }}
+                  className={cn(
+                    'cursor-pointer text-gray-900',
+                    idx === highlightedIndex && 'bg-accent text-accent-foreground'
+                  )}
                 >
                   <Check
                     className={cn(

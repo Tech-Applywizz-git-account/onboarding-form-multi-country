@@ -12,6 +12,11 @@ export const schema = z.object({
   primary_phone: z.string().regex(/^\+[0-9]+$/, "Please enter a valid phone number"),
   callable_phone: z.string().optional(),
   whatsapp_number: z.string().regex(/^\+[0-9]+$/, "Please enter a valid phone number"),
+  address_line1: z.string().min(1, "Required"),
+  address_line2: z.string().optional(),
+  city: z.string().min(1, "Required"),
+  state_province: z.string().min(1, "Required"),
+  zip_postal_code: z.string().min(1, "Required"),
   full_address: z.string().min(1, "Required"),
   zip_or_country: z.string().min(1, "Required"),
   other_country: z.string().optional(),
@@ -22,7 +27,7 @@ export const schema = z.object({
   portfolio_url: z.string().optional(),
   addons_notes: z.string().optional(),
   resume_dummy: z.string().min(1, "Resume required"),
-  date_of_birth: z.string().min(1, "Required"),
+  date_of_birth: z.string().min(1, "Required").regex(/^(0[1-9]|1[0-2])\/(0[1-9]|[12][0-9]|3[01])\/\d{4}$/, "Must be MM/DD/YYYY"),
 
   // Step 2
   is_over_18: yesNo,
@@ -40,10 +45,11 @@ export const schema = z.object({
   main_subject: z.string().min(1, "Required"),
   graduation_year: z.string().min(4, "Required"),
   cgpa: z.string().min(1, "Required"),
-  desired_start_date: z.string().min(1, "Required"),
+  desired_start_date: z.string().min(1, "Required").regex(/^(0[1-9]|1[0-2])\/(0[1-9]|[12][0-9]|3[01])\/\d{2}$/, "Must be MM/DD/YY"),
   willing_to_relocate: yesNo,
   can_work_3_days_in_office: yesNo,
-  salary_expectations: z.string().min(1, "Required"),
+  salary_expectations_yearly: z.string().min(1, "Required"),
+  salary_expectations_hourly: z.string().min(1, "Required"),
   salary_currency: z.string().min(1, "Required"),
   salary_period: z.enum(["Yearly", "Monthly", "Hourly"]),
   role: z.string().min(1, "Required"),
@@ -87,7 +93,6 @@ export const schema = z.object({
   race_ethnicity_other: z.string().optional(),
   veteran_status: z.string().optional(),
   disability_status: z.string().min(1, "Required"),
-  financial_licenses: yesNo,
   current_country_timezone: z.string().min(1, "Required"),
   current_country_timezone_other: z.string().optional(),
   province_territory: z.string().optional(),
@@ -103,6 +108,9 @@ export const schema = z.object({
 
   // Form status
   form_status: z.string().optional(),
+
+  // Terms and Conditions
+  terms_accepted: z.boolean().default(false),
 }).superRefine((data, ctx) => {
   // Conditional Validation for Other Country
   if (data.zip_or_country === "Other") {
@@ -156,6 +164,15 @@ export const schema = z.object({
             message: "Required",
             path: ["employment_history", index, "start_date"],
           });
+        } else {
+          const dateRegex = /^(0[1-9]|1[0-2])\/\d{4}$/;
+          if (!dateRegex.test(job.start_date)) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: "Must be MM/YYYY",
+              path: ["employment_history", index, "start_date"],
+            });
+          }
         }
         if (!job.is_current && (!job.end_date || job.end_date.trim() === "")) {
           ctx.addIssue({
@@ -163,6 +180,15 @@ export const schema = z.object({
             message: "Required",
             path: ["employment_history", index, "end_date"],
           });
+        } else if (job.end_date && job.end_date.trim() !== "") {
+          const dateRegex = /^(0[1-9]|1[0-2])\/\d{4}$/;
+          if (!dateRegex.test(job.end_date)) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: "Must be MM/YYYY",
+              path: ["employment_history", index, "end_date"],
+            });
+          }
         }
       });
     }

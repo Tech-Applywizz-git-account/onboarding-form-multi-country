@@ -333,3 +333,95 @@
   .animate-glow { animation: glow 2s ease-in-out infinite; }
   .animate-float { animation: float 3s ease-in-out infinite; }
 }
+
+/* React Phone Input 2 styling overrides */
+.phone-input-container .form-control {
+  font-family: inherit !important;
+  width: 100% !important;
+  height: 44px !important;
+  font-size: 14px !important;
+  padding-left: 48px !important;
+  border-radius: 8px !important;
+  border: 1px solid #e2e8f0 !important;
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+  font-weight: 500 !important;
+  transition: all 0.2s ease !important;
+}
+
+.phone-input-container .form-control:focus {
+  border-color: #1F4096 !important;
+  background-color: #ffffff !important;
+  box-shadow: 0 0 0 4px rgba(31, 64, 150, 0.1) !important;
+  outline: none !important;
+}
+
+.phone-input-container .flag-dropdown {
+  border-radius: 8px 0 0 8px !important;
+  border: 1px solid #e2e8f0 !important;
+  background-color: #f8fafc !important;
+  border-right: none !important;
+  transition: all 0.2s ease !important;
+}
+
+.phone-input-container:focus-within .flag-dropdown {
+  border-color: #1F4096 !important;
+  background-color: #ffffff !important;
+}
+
+.phone-input-container .country-list {
+  border-radius: 8px !important;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1) !important;
+  border: 1px solid #e2e8f0 !important;
+  font-family: inherit !important;
+}
+
+/* React Day Picker styling overrides for dropdowns */
+.rdp-dropdown_month, .rdp-dropdown_year {
+  background-color: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+}
+
+.rdp-dropdown {
+  position: relative !important;
+  display: inline-flex !important;
+  align-items: center !important;
+}
+
+.rdp-dropdown_value {
+  display: none !important; /* Hide duplicate label text from react-day-picker */
+}
+
+/* Style the native select inside rdp-dropdown */
+.rdp-dropdown select {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  background-color: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 6px !important;
+  padding: 6px 28px 6px 10px !important; /* Extra padding on right for chevron */
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  color: #0f172a !important;
+  outline: none !important;
+  cursor: pointer !important;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2364748b' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 8px center !important;
+  background-size: 14px !important;
+  transition: all 0.2s ease !important;
+}
+
+.rdp-dropdown select:hover {
+  border-color: #1F4096 !important;
+  background-color: #f8fafc !important;
+}
+
+.rdp-dropdown select:focus {
+  border-color: #1F4096 !important;
+  box-shadow: 0 0 0 2px rgba(31, 64, 150, 0.15) !important;
+}
+
+
