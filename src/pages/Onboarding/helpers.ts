@@ -268,12 +268,7 @@ export const fetchUniversities = async (query: string, country?: string): Promis
     return _uniCache.get(cacheKey)!;
   }
 
-  // Step 1: Search local dataset (instant, works offline)
-  const { searchUniversitiesLocally } = await import("./universityData");
-  let localResults = searchUniversitiesLocally(query, country);
-  if (localResults.length === 0 && country) {
-    localResults = searchUniversitiesLocally(query, undefined);
-  }
+
 
   const isoCode = country ? COUNTRY_TO_ISO[country] : undefined;
   const q = query.toLowerCase().trim();
@@ -288,70 +283,146 @@ export const fetchUniversities = async (query: string, country?: string): Promis
     return merged.slice(0, 100);
   };
 
-  // Step 2: Hipolabs — best for branch-level names, usually responds in <1s
+  const getFallbackUniversities = async (hipolabsResults: string[] = []): Promise<string[]> => {
+    const fetchNominatim = async (): Promise<string[]> => {
+      try {
+        const codes = isoCode ? isoCode.toLowerCase() : "";
+        const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query + " university")}&format=json&limit=15${codes ? `&countrycodes=${codes}` : ""}`;
+        const res = await fetch(url, { headers: { "User-Agent": "ApplyWizz-Onboarding-Form/1.0" } });
+        if (res.ok) {
+          const data = await res.json();
+          return data.map((item: any) => item.name || item.display_name.split(",")[0]).filter(Boolean);
+        }
+      } catch (error) {
+        console.error("Nominatim error:", error);
+      }
+      return [];
+    };
+
+    const fetchGooglePlaces = async (): Promise<string[]> => {
+      const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+      if (!apiKey || apiKey.trim() === "") return fetchNominatim();
+      
+      try {
+        await loadGoogleMapsScript(apiKey);
+        const w = window as any;
+        if (w.google?.maps?.places) {
+          return new Promise((resolve) => {
+            const autocompleteService = new w.google.maps.places.AutocompleteService();
+            const options: any = { input: query, types: ["university"] };
+            if (isoCode) {
+              options.componentRestrictions = { country: isoCode.toLowerCase() };
+            }
+            autocompleteService.getPlacePredictions(options, (predictions: any[], status: any) => {
+              if (status !== w.google.maps.places.PlacesServiceStatus.OK || !predictions) {
+                fetchNominatim().then(resolve);
+                return;
+              }
+              resolve(predictions.map((pred) => pred.structured_formatting?.main_text || pred.description.split(",")[0]));
+            });
+          });
+        }
+      } catch (error) {
+        console.error("Google Places error:", error);
+      }
+      return fetchNominatim();
+    };
+
+    const supplementalResults = await fetchGooglePlaces();
+    const final = mergeAndSort([hipolabsResults, supplementalResults]);
+    _uniCache.set(cacheKey, final);
+    if (_uniCache.size > UNI_CACHE_MAX) {
+      _uniCache.delete(_uniCache.keys().next().value!);
+    }
+    return final;
+  };
+
+  // Step 2: ROR (Research Organization Registry) - Global standard for academic institutions
+  const fetchROR = async (): Promise<string[]> => {
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 3000);
+      // country code filter for ROR if needed: query.advanced=country.country_code:US
+      const rorUrl = `https://api.ror.org/organizations?query=${encodeURIComponent(query)}`;
+      const res = await fetch(rorUrl, { headers: { "User-Agent": "ApplyWizz-Onboarding-Form/1.0" }, signal: controller.signal });
+      clearTimeout(timeout);
+      if (res.ok) {
+        const data = await res.json();
+        return data.items
+          .filter((item: any) => item.types && item.types.includes("education"))
+          .map((item: any) => {
+            const display = item.names?.find((n: any) => n.types?.includes("ror_display"));
+            return display ? display.value : item.names?.[0]?.value;
+          })
+          .filter(Boolean);
+      }
+    } catch (error) {
+      console.error("ROR API error:", error);
+    }
+    return [];
+  };
+
+  // Step 2.5: US Dept of Education College Scorecard (US only)
+  const fetchScorecard = async (): Promise<string[]> => {
+    // Only run if the country is US or unspecified
+    if (isoCode && isoCode !== "us") return [];
+    
+    try {
+      const apiKey = import.meta.env.VITE_COLLEGE_SCORECARD_API_KEY || "DEMO_KEY";
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 3000);
+      const url = `https://api.data.gov/ed/collegescorecard/v1/schools.json?school.name=${encodeURIComponent(query)}&fields=school.name,school.city,school.state&per_page=30&api_key=${apiKey}`;
+      const res = await fetch(url, { signal: controller.signal });
+      clearTimeout(timeout);
+      if (res.ok) {
+        const data = await res.json();
+        return data.results?.map((r: any) => r["school.name"]).filter(Boolean) || [];
+      }
+    } catch (error) {
+      console.error("Scorecard API error:", error);
+    }
+    return [];
+  };
+
+  // Step 3: Combined Fetch — run specialized APIs in parallel
   try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 3000);
+    const [rorResults, scorecardResults, hipolabsRes] = await Promise.all([
+      fetchROR(),
+      fetchScorecard(),
+      fetch(`http://universities.hipolabs.com/search?name=${encodeURIComponent(query)}${country && country !== "Other" ? `&country=${encodeURIComponent(country)}` : ""}`, { signal: AbortSignal.timeout(3000) }).catch(() => null)
+    ]);
 
-    const hipolabsCountry = country && country !== "Other" ? `&country=${encodeURIComponent(country)}` : "";
-    const hipolabsUrl = `https://universities.hipolabs.com/search?name=${encodeURIComponent(query)}${hipolabsCountry}`;
-
-    const hipolabsRes = await fetch(hipolabsUrl, { signal: controller.signal });
-    clearTimeout(timeout);
-
-    if (hipolabsRes.ok) {
+    if (hipolabsRes && hipolabsRes.ok) {
       const data = await hipolabsRes.json();
       const hipolabsResults: string[] = (data as any[])
         .map((u: any) => u.name as string)
         .filter(Boolean)
         .slice(0, 100);
 
-      // If Hipolabs gave good results, return immediately — skip slower APIs
-      if (hipolabsResults.length >= 5) {
-        const final = mergeAndSort([localResults, hipolabsResults]);
-        _uniCache.set(cacheKey, final);
+      const combinedApiResults = mergeAndSort([scorecardResults, rorResults, hipolabsResults]);
+
+      // If APIs gave good results, return immediately — skip slower fallbacks
+      if (combinedApiResults.length >= 5) {
+        _uniCache.set(cacheKey, combinedApiResults);
         if (_uniCache.size > UNI_CACHE_MAX) {
           _uniCache.delete(_uniCache.keys().next().value!);
         }
-        return final;
+        return combinedApiResults;
       }
 
-      // Hipolabs returned few results — supplement with OpenAlex in parallel
-      const countryFilter = isoCode ? `,country_code:${isoCode}` : "";
-      const openAlexUrl = `https://api.openalex.org/institutions?filter=type:education,display_name.search:${encodeURIComponent(query)}${countryFilter}&per-page=50&select=display_name`;
-
-      try {
-        const controller2 = new AbortController();
-        const timeout2 = setTimeout(() => controller2.abort(), 3000);
-        const openAlexRes = await fetch(openAlexUrl, { signal: controller2.signal });
-        clearTimeout(timeout2);
-
-        let openAlexResults: string[] = [];
-        if (openAlexRes.ok) {
-          const oaData = await openAlexRes.json();
-          openAlexResults = oaData.results?.map((u: any) => u.display_name as string).filter(Boolean) ?? [];
-        }
-        const final = mergeAndSort([localResults, hipolabsResults, openAlexResults]);
-        _uniCache.set(cacheKey, final);
-        if (_uniCache.size > UNI_CACHE_MAX) {
-          _uniCache.delete(_uniCache.keys().next().value!);
-        }
-        return final;
-      } catch {
-        // OpenAlex timed out — use what we have
-        const final = mergeAndSort([localResults, hipolabsResults]);
-        _uniCache.set(cacheKey, final);
-        return final;
-      }
+      // APIs returned few results — supplement with Google Places / Nominatim
+      return getFallbackUniversities(combinedApiResults);
+    } else if (rorResults.length > 0 || scorecardResults.length > 0) {
+      const partialResults = mergeAndSort([scorecardResults, rorResults]);
+      _uniCache.set(cacheKey, partialResults);
+      return partialResults;
     }
   } catch {
-    // Hipolabs failed or timed out — fall through to local results
+    // APIs failed or timed out — fall through to fallback
   }
 
-  // Fallback: local results only
-  const final = mergeAndSort([localResults]);
-  _uniCache.set(cacheKey, final);
-  return final;
+  // Fallback: Google Places / Nominatim if specialized APIs fail
+  return getFallbackUniversities();
 };
 
 export const fetchCities = async (query: string, country?: string): Promise<string[]> => {

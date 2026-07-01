@@ -1,6 +1,7 @@
 import React from 'react';
 import { CheckCircle, Mail, Calendar, Sparkles } from 'lucide-react';
 import successIcon from '@/assets/success-icon.png';
+import applywizzLogo from '@/assets/applywizz_logo-with_text.png';
 
 const Success: React.FC = () => {
   console.log('--- MOUNTING SUCCESS COMPONENT ---');
@@ -48,13 +49,8 @@ const Success: React.FC = () => {
           </div>
 
           {/* APPLYWIZZ Branding */}
-          <div className="inline-flex items-center space-x-2 mb-4">
-            <div className="w-8 h-8 bg-gradient-to-r from-primary to-primary-glow rounded-lg flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-lg">A</span>
-            </div>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              APPLYWIZZ
-            </h1>
+          <div className="flex justify-center mb-4">
+            <img src={applywizzLogo} alt="APPLYWIZZ" className="h-10 object-contain" />
           </div>
 
           {/* Success Message */}

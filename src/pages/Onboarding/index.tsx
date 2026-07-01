@@ -574,10 +574,10 @@ const OnboardingPage: React.FC = () => {
         }
         if (addons) setValue("addons_notes", addons.trim(), { shouldValidate: true });
 
-        // 5. Predicted Role
-        if (parsedData.predicted_job_title) {
-          setValue("job_role_preferences", [parsedData.predicted_job_title], { shouldValidate: true });
-        }
+        // 5. Predicted Role (Auto-fill disabled per user request)
+        // if (parsedData.predicted_job_title) {
+        //   setValue("job_role_preferences", [parsedData.predicted_job_title], { shouldValidate: true });
+        // }
 
         toast({
           title: "Profile Auto-filled",

@@ -95,7 +95,7 @@ export const schema = z.object({
   disability_status: z.string().min(1, "Required"),
   current_country_timezone: z.string().min(1, "Required"),
   current_country_timezone_other: z.string().optional(),
-  province_territory: z.string().optional(),
+  province_territory: z.string().min(1, "Required"),
   province_territory_other: z.string().optional(),
   county: z.string().optional(),
   county_other: z.string().optional(),
@@ -245,17 +245,6 @@ export const schema = z.object({
         code: z.ZodIssueCode.custom,
         message: "Please provide a description of the substances used",
         path: ["substances_description"],
-      });
-    }
-  }
-
-  // Conditional Validation for Province/Territory (Canada or USA)
-  if (data.zip_or_country === "Canada" || data.zip_or_country === "United States") {
-    if (!data.province_territory || data.province_territory.trim() === "") {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Required",
-        path: ["province_territory"],
       });
     }
   }
