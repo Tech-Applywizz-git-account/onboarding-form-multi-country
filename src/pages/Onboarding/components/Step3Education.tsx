@@ -25,6 +25,7 @@ import {
   Trash2,
   GraduationCap,
   Briefcase,
+  Info,
   Calendar as CalendarIcon
 } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
@@ -41,6 +42,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import * as TooltipPrimitive from "@radix-ui/react-tooltip";
 import { cn } from "@/lib/utils";
 
 interface Step3Props {
@@ -270,6 +273,8 @@ export const Step3Education: React.FC<Step3Props> = ({
   });
 
   // Dynamic States
+  const [jobRoleOpen, setJobRoleOpen] = useState(false);
+  const [jobRoleTooltipOpen, setJobRoleTooltipOpen] = useState(false);
   const [uniSearch, setUniSearch] = useState("");
   const [uniSuggestions, setUniSuggestions] = useState<string[]>([]);
   const [uniLoading, setUniLoading] = useState(false);
@@ -289,18 +294,6 @@ export const Step3Education: React.FC<Step3Props> = ({
       setUniLoading(false);
       return;
     }
-
-    // Phase 1: Show local results IMMEDIATELY — zero network delay
-    // Dynamic import is effectively instant after first call (module cached)
-    import("../universityData").then(({ searchUniversitiesLocally }) => {
-      const localNow = searchUniversitiesLocally(uniSearch, selectedCountry);
-      const localFallback = localNow.length === 0
-        ? searchUniversitiesLocally(uniSearch, undefined)
-        : localNow;
-      if (localFallback.length > 0) {
-        setUniSuggestions(Array.from(new Set(localFallback)).slice(0, 25));
-      }
-    });
 
     // Phase 2: Fetch full API results (Hipolabs + cache) after debounce
     const timer = setTimeout(async () => {
@@ -392,7 +385,7 @@ export const Step3Education: React.FC<Step3Props> = ({
           </Select>
         </FormField>
 
-        <FormField id="university_name" label={`University Name (${displayCountryName || "Selected Country"})`} required error={errors.university_name}>
+        <FormField id="university_name" label={`University Name `} required error={errors.university_name}>
           <Popover open={uniOpen} onOpenChange={setUniOpen}>
             <PopoverTrigger asChild>
               <Button
@@ -502,27 +495,96 @@ export const Step3Education: React.FC<Step3Props> = ({
         <h3 className="text-lg font-bold text-slate-800">Job Preferences</h3>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <FormField id="job_role_preferences" label="Preferred Job Role" required error={errors.job_role_preferences as any}>
-          <Select
-            disabled={jobRolesLoading}
-            value={jobRoles && jobRoles.length > 0 ? jobRoles[0] : ""}
-            onValueChange={(v) => {
-              setValue("job_role_preferences", [v], { shouldValidate: true });
-              if (v !== "Other") setValue("job_role_other", "", { shouldValidate: false });
-            }}
-          >
-            <SelectTrigger className="h-11 border-slate-200 focus:border-blue-500 focus:ring-0">
-              <SelectValue placeholder={jobRolesLoading ? "Loading..." : "Select Preferred Role"} />
-            </SelectTrigger>
-            <SelectContent>
-              {(jobRolesData.length > 0 ? jobRolesData : jobRoleOptions).map((o) => (
-                <SelectItem key={'id' in o ? o.id : o.value} value={'name' in o ? o.name : o.value}>
-                  {'name' in o ? o.name : o.label}
-                </SelectItem>
-              ))}
-              <SelectItem value="Other">Other</SelectItem>
-            </SelectContent>
-          </Select>
+        <FormField 
+          id="job_role_preferences" 
+          label={
+            <span className="flex items-center gap-1.5">
+              <span>Preferred Job Role</span>
+              <Tooltip open={jobRoleTooltipOpen} onOpenChange={setJobRoleTooltipOpen}>
+                <TooltipTrigger asChild>
+                  <button 
+                    type="button"
+                    onMouseEnter={() => setJobRoleTooltipOpen(true)}
+                    onMouseLeave={() => setJobRoleTooltipOpen(false)}
+                    onClick={() => setJobRoleTooltipOpen(!jobRoleTooltipOpen)}
+                    className="flex items-center justify-center bg-slate-950 text-white rounded-full w-4 h-4 shadow-sm hover:bg-[#1F4096] hover:scale-105 active:scale-95 transition-all duration-200 cursor-help outline-none border border-slate-800"
+                  >
+                    <span className="text-[9px] font-extrabold leading-none font-sans relative -top-[0.5px]">i</span>
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent 
+                  side="top" 
+                  align="center" 
+                  className="bg-slate-950 text-slate-100 border border-slate-800 p-3 max-w-[280px] shadow-2xl rounded-lg text-xs leading-relaxed z-[100]"
+                  sideOffset={6}
+                >
+                  <div className="flex items-start gap-2">
+                    <Info className="h-4 w-4 text-[#00D2C4] mt-0.5 flex-shrink-0" />
+                    <p>Your application will be processed for this job role</p>
+                  </div>
+                  <TooltipPrimitive.Arrow className="fill-slate-950" width={10} height={5} />
+                </TooltipContent>
+              </Tooltip>
+            </span>
+          }
+          required 
+          error={errors.job_role_preferences as any}
+        >
+          <Popover open={jobRoleOpen} onOpenChange={setJobRoleOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn("w-full justify-between h-11 border-slate-200 hover:bg-white font-normal text-left", errors.job_role_preferences && "border-destructive")}
+                disabled={jobRolesLoading}
+              >
+                <span className="truncate">
+                  {jobRolesLoading ? "Loading..." : (jobRoles && jobRoles.length > 0 ? (
+                    (jobRolesData.length > 0 ? jobRolesData : jobRoleOptions).find(o => ('name' in o ? o.name : o.value) === jobRoles[0])
+                      ? (jobRolesData.length > 0 ? jobRolesData : jobRoleOptions).find(o => ('name' in o ? o.name : o.value) === jobRoles[0])!['name' in (jobRolesData.length > 0 ? jobRolesData[0] : jobRoleOptions[0]) ? 'name' : 'label']
+                      : (jobRoles[0] === "Other" ? "Other" : jobRoles[0])
+                  ) : "Select Preferred Role")}
+                </span>
+                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+              <Command>
+                <CommandInput placeholder="Search job roles..." />
+                <CommandEmpty>No roles found.</CommandEmpty>
+                <CommandGroup className="max-h-60 overflow-auto">
+                  {(jobRolesData.length > 0 ? jobRolesData : jobRoleOptions).map((o) => {
+                    const id = 'id' in o ? o.id : o.value;
+                    const val = 'name' in o ? o.name : o.value;
+                    const label = 'name' in o ? o.name : o.label;
+                    return (
+                      <CommandItem
+                        key={id}
+                        value={label}
+                        onSelect={() => {
+                          setValue("job_role_preferences", [val], { shouldValidate: true });
+                          if (val !== "Other") setValue("job_role_other", "", { shouldValidate: false });
+                          setJobRoleOpen(false);
+                        }}
+                      >
+                        <Check className={cn("mr-2 h-4 w-4", jobRoles[0] === val ? "opacity-100" : "opacity-0")} />
+                        {label}
+                      </CommandItem>
+                    );
+                  })}
+                  <CommandItem
+                    value="Other"
+                    onSelect={() => {
+                      setValue("job_role_preferences", ["Other"], { shouldValidate: true });
+                      setJobRoleOpen(false);
+                    }}
+                  >
+                    <Check className={cn("mr-2 h-4 w-4", jobRoles[0] === "Other" ? "opacity-100" : "opacity-0")} />
+                    Other
+                  </CommandItem>
+                </CommandGroup>
+              </Command>
+            </PopoverContent>
+          </Popover>
           {jobRoles.includes("Other") && (
             <div className="mt-2">
               <Input

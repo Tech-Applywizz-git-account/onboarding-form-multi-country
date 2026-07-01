@@ -57,6 +57,29 @@ export const Step5Demographics: React.FC<Step5Props> = ({
   const countyOptions = getCountyOptions();
 
   const provinceTerritory = watch("province_territory");
+  const step1State = watch("state_province");
+
+  React.useEffect(() => {
+    if (step1State) {
+      if (isUS) {
+        if (USA_STATES.includes(step1State)) {
+          setValue("province_territory", step1State, { shouldValidate: true });
+        } else {
+          setValue("province_territory", "Other", { shouldValidate: true });
+          setValue("province_territory_other", step1State, { shouldValidate: true });
+        }
+      } else if (isCanada) {
+        if (CANADIAN_PROVINCES.includes(step1State)) {
+          setValue("province_territory", step1State, { shouldValidate: true });
+        } else {
+          setValue("province_territory", "Other", { shouldValidate: true });
+          setValue("province_territory_other", step1State, { shouldValidate: true });
+        }
+      } else {
+        setValue("province_territory", step1State, { shouldValidate: true });
+      }
+    }
+  }, [step1State, isUS, isCanada, setValue]);
 
   React.useEffect(() => {
     if (isUS && provinceTerritory && provinceTerritory !== "Other") {
@@ -224,17 +247,17 @@ export const Step5Demographics: React.FC<Step5Props> = ({
             )}
           </div>
 
-          {(isCanada || isUS) && (
-            <div className="space-y-2">
-              <FormField 
-                id="province_territory" 
-                label={isCanada ? "Province Or Territory" : (isUS ? "State" : `${displayCountryName || "Region"}`)} 
-                required={isCanada} 
-                error={errors.province_territory}
-              >
+          <div className="space-y-2">
+            <FormField 
+              id="province_territory" 
+              label={isCanada ? "Province Or Territory" : (isUS ? "State" : `${displayCountryName || "Region"} State/Province`)} 
+              required={true} 
+              error={errors.province_territory}
+            >
+              {(isCanada || isUS) ? (
                 <Select
                   value={watch("province_territory") || ""}
-                  onValueChange={(v) => setValue("province_territory", v, { shouldValidate: isCanada })}
+                  onValueChange={(v) => setValue("province_territory", v, { shouldValidate: true })}
                 >
                   <SelectTrigger className="border-slate-200 h-11 bg-white">
                     <SelectValue placeholder={isCanada ? "Select Province" : "Select State"} />
@@ -246,19 +269,26 @@ export const Step5Demographics: React.FC<Step5Props> = ({
                     <SelectItem value="Other">Other</SelectItem>
                   </SelectContent>
                 </Select>
-              </FormField>
-              {watch("province_territory") === "Other" && (
-                <div className="space-y-1">
-                  <Input {...register("province_territory_other")} placeholder="Specify location" className="h-10 border-slate-200 animate-in fade-in slide-in-from-top-2" />
-                  {errors.province_territory_other && (
-                    <p className="text-xs font-medium text-destructive mt-1">
-                      {errors.province_territory_other.message}
-                    </p>
-                  )}
-                </div>
+              ) : (
+                <Input 
+                  {...register("province_territory")} 
+                  placeholder="Enter state/province" 
+                  className="h-11 border-slate-200 bg-white" 
+                />
               )}
-            </div>
-          )}
+            </FormField>
+            {(isCanada || isUS) && watch("province_territory") === "Other" && (
+              <div className="space-y-1">
+                <Input {...register("province_territory_other")} placeholder="Specify location" className="h-10 border-slate-200 animate-in fade-in slide-in-from-top-2" />
+                {errors.province_territory_other && (
+                  <p className="text-xs font-medium text-destructive mt-1">
+                    {errors.province_territory_other.message}
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+
           
           <div className="space-y-2">
             <FormField id="county" label={`${displayCountryName || "County"}`} required={isUK} error={errors.county}>
